@@ -10,6 +10,7 @@ A phone-friendly web app, run locally, that helps me (a new financial/insurance 
 4. demo-script.md - script for a 2-minute screen recording (a demo, not a pitch)
 (The recording itself goes in the zip too. Check size limit.)
 4b. web-page.md  - copy (not code) for a short explainer page; the agent builds the page from it later
+4c. ad-script.md  - 30-second ad script (on screen, voice, sound) to be made with AI image/video/sound tools on Nov 19
 Also: solution.md = the app design (source of truth for what to build, and what NOT to build).
 
 ## Rules
