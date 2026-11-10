@@ -46,7 +46,7 @@
     const cls = s && (s.kind === "yellow" || s.kind === "red") ? s.kind : "";
     return `<a class="card row ${cls}" href="#/c/${c.id}">
       <div class="row-top"><span class="name">${esc(c.name)}</span>${badge(s)}</div>
-      <div class="muted">${esc(c.phone)}</div></a>`;
+      <div class="muted">${esc(c.phone)}${c.callbackTime && !c.dnc ? " &middot; " + esc(DateParse.formatTime(c.callbackTime)) : ""}</div></a>`;
   }
 
   // ---------- views ----------
@@ -54,7 +54,7 @@
     const t = today();
     const due = state.contacts
       .filter((c) => !c.dnc && c.callbackDate && c.callbackDate <= t)
-      .sort((a, b) => a.callbackDate.localeCompare(b.callbackDate) || a.name.localeCompare(b.name));
+      .sort((a, b) => a.callbackDate.localeCompare(b.callbackDate) || (a.callbackTime || "99").localeCompare(b.callbackTime || "99") || a.name.localeCompare(b.name));
     app.innerHTML = `
       <h1>Today's callbacks</h1>
       <p class="muted">${esc(nice(t))}</p>
@@ -119,7 +119,7 @@
       ${c.dnc ? `<div class="banner">DO NOT CALL. ${esc((c.dncLog[c.dncLog.length - 1] || {}).reason || "")}</div>` : ""}
       <div class="card">
         <div class="muted">Phone: ${esc(c.phone)}</div>
-        <div class="muted">Next callback: ${c.callbackDate && !c.dnc ? esc(nice(c.callbackDate)) : "none set"}</div>
+        <div class="muted">Next callback: ${c.callbackDate && !c.dnc ? esc(nice(c.callbackDate)) + (c.callbackTime ? " at " + esc(DateParse.formatTime(c.callbackTime)) : "") : "none set"}</div>
       </div>
       <div class="actions">
         ${callBtn}
@@ -176,7 +176,7 @@
     { key: "topics", q: "What topics did you cover?", hint: "Tap the box, then use your keyboard's microphone to talk." },
     { key: "companies", q: "What companies were discussed?", hint: "Their current insurer, competitors, anyone they mentioned." },
     { key: "next", q: "What are the next points of progress?", hint: "What needs to happen to move this person forward?" },
-    { key: "date", q: "When should you call back?" },
+    { key: "date", q: "When should you call back?", hint: "Tap the first box and use your keyboard's microphone to say it, or pick a date." },
     { key: "objections", q: "Any objections?", hint: "Optional. What held them back?" },
     { key: "lifeIssues", q: "Any life issues to follow up on?", hint: "Optional. One per line, e.g. \"new baby\" or \"changing jobs\"." },
   ];
@@ -184,19 +184,22 @@
   function viewDebrief(id) {
     const c = find(id);
     if (!c) { location.hash = "#/"; return; }
-    if (!draft || draft.id !== id) draft = { id, step: 0, topics: "", companies: "", next: "", date: "", objections: "", lifeIssues: "" };
+    if (!draft || draft.id !== id) draft = { id, step: 0, topics: "", companies: "", next: "", date: "", time: "", spoken: "", objections: "", lifeIssues: "" };
     const st = STEPS[draft.step];
     const last = draft.step === STEPS.length - 1;
     let body;
     if (st.key === "date") {
       const t = today();
-      body = `<input id="field" type="date" min="${t}" value="${esc(draft.date)}">
+      body = `<label for="spoken">Say or type it</label>
+        <input id="spoken" autocomplete="off" placeholder='e.g. "Thursday at 2" or "in 3 days"' value="${esc(draft.spoken)}">
+        <label for="field">Or pick a date</label>
+        <input id="field" type="date" min="${t}" value="${esc(draft.date)}">
         <div class="quick">
           <button class="btn" data-add="1">Tomorrow</button>
           <button class="btn" data-add="3">In 3 days</button>
           <button class="btn" data-add="7">Next week</button>
         </div>
-        <div id="dateConfirm">${draft.date ? `<div class="confirm">Callback: ${esc(nice(draft.date))}</div>` : `<div class="muted">No date set: this person will not appear in your callback list.</div>`}</div>`;
+        <div id="dateConfirm"></div>`;
     } else {
       body = `<textarea id="field" autofocus>${esc(draft[st.key])}</textarea>`;
     }
@@ -211,17 +214,37 @@
       </div>`;
 
     const field = document.getElementById("field");
-    const setDate = (v) => {
-      draft.date = v;
-      field.value = v;
-      document.getElementById("dateConfirm").innerHTML = v
-        ? `<div class="confirm">Callback: ${esc(nice(v))}</div>`
-        : `<div class="muted">No date set: this person will not appear in your callback list.</div>`;
+    // Shows the interpreted date back to you so a misheard date can't slip through.
+    const showConfirm = (problem) => {
+      const box = document.getElementById("dateConfirm");
+      if (!box) return;
+      if (problem) box.innerHTML = `<div class="error">${esc(problem)}</div>`;
+      else if (draft.date) box.innerHTML = `<div class="confirm">Callback: ${esc(nice(draft.date))}${draft.time ? " at " + esc(DateParse.formatTime(draft.time)) : ""}. Is that right?</div>`;
+      else box.innerHTML = `<div class="muted">No date set: this person will not appear in your callback list.</div>`;
     };
+    const setDate = (v, time) => {
+      draft.date = v;
+      draft.time = time || "";
+      if (st.key === "date") field.value = v;
+      showConfirm();
+    };
+    if (st.key === "date") showConfirm();
     field.addEventListener("input", () => {
-      if (st.key === "date") setDate(field.value); else draft[st.key] = field.value;
+      if (st.key === "date") { draft.spoken = ""; document.getElementById("spoken").value = ""; setDate(field.value); }
+      else draft[st.key] = field.value;
     });
-    app.querySelectorAll("[data-add]").forEach((b) => b.addEventListener("click", () => setDate(addDays(today(), Number(b.dataset.add)))));
+    const spoken = document.getElementById("spoken");
+    if (spoken) spoken.addEventListener("input", () => {
+      draft.spoken = spoken.value;
+      if (!spoken.value.trim()) { setDate("", ""); return; }
+      const r = DateParse.parseSpoken(spoken.value, today());
+      if (r) setDate(r.date, r.time);
+      else { draft.date = ""; draft.time = ""; field.value = ""; showConfirm("Could not understand that date. Try \"Thursday at 2\", \"tomorrow\", or \"Nov 19\", or pick a date below."); }
+    });
+    app.querySelectorAll("[data-add]").forEach((b) => b.addEventListener("click", () => {
+      draft.spoken = ""; document.getElementById("spoken").value = "";
+      setDate(addDays(today(), Number(b.dataset.add)));
+    }));
     document.getElementById("back").addEventListener("click", () => {
       if (draft.step === 0) { draft = null; location.hash = "#/c/" + id; } else { draft.step--; viewDebrief(id); }
     });
@@ -230,6 +253,7 @@
       c.calls.push({ id: uid(), date: today(), topics: draft.topics.trim(), companies: draft.companies.trim(), next: draft.next.trim(), objections: draft.objections.trim(), lifeIssues: draft.lifeIssues.trim() });
       draft.lifeIssues.split("\n").map((l) => l.trim()).filter(Boolean).forEach((text) => c.issues.push({ id: uid(), text, resolved: false, added: today() }));
       c.callbackDate = draft.date;
+      c.callbackTime = draft.time || "";
       draft = null;
       await trySave();
       location.hash = "#/c/" + id;

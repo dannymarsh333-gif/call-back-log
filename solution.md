@@ -11,7 +11,7 @@ A phone-friendly app where a new insurance rep talks through a quick debrief aft
    1. What topics did you cover?
    2. What companies were discussed?
    3. What are the next points of progress?
-5. The app then asks for the callback date. You can say it by voice (for example "Thursday at 2") or tap a date picker with quick buttons ("Tomorrow," "In 3 days," "Next week"). The app shows the interpreted date and asks you to confirm before saving. It also asks for any objections and any life issues to follow up on, each answered by voice as free text (no tags in version 1).
+5. The app then asks for the callback date. You can say it by voice into a text box using the phone keyboard's dictation (for example "Thursday at 2") or tap a date picker with quick buttons ("Tomorrow," "In 3 days," "Next week"). The app shows the interpreted date and time and asks "Is that right?" before you save. Built in the early draft. It also asks for any objections and any life issues to follow up on, each answered by voice as free text (no tags in version 1).
 6. Save. The note is added to the contact's history and the person appears on the right day.
 7. If a callback was missed, the person rolls over to the next day, marked yellow at 1 day overdue and red at 2 or more days, with a text label such as "2 days overdue."
 
