@@ -92,5 +92,7 @@ textarea { min-height: 140px; resize: vertical; }
 .call dt { font-weight: 700; font-size: 0.85rem; color: var(--muted); margin-top: 6px; }
 .call dd { margin: 0; white-space: pre-wrap; }
 .confirm { font-weight: 700; color: var(--ok-text); background: var(--ok-bg); padding: 8px 12px; border-radius: 8px; }
+.prev { margin-top: 4px; font-size: 0.92rem; font-weight: 700; color: var(--brand); overflow-wrap: anywhere; }
+.prev .muted { font-weight: 600; }
 .empty { text-align: center; padding: 28px 8px; color: var(--muted); }
 .error { background: var(--danger); color: #fff; padding: 12px; border-radius: 10px; }

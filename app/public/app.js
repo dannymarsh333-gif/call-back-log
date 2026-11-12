@@ -46,7 +46,15 @@
     const cls = s && (s.kind === "yellow" || s.kind === "red") ? s.kind : "";
     return `<a class="card row ${cls}" href="#/c/${c.id}">
       <div class="row-top"><span class="name">${esc(c.name)}</span>${badge(s)}</div>
-      <div class="muted">${esc(c.phone)}${c.callbackTime && !c.dnc ? " &middot; " + esc(DateParse.formatTime(c.callbackTime)) : ""}</div></a>`;
+      <div class="muted">${esc(c.phone)}${c.callbackTime && !c.dnc ? " &middot; " + esc(DateParse.formatTime(c.callbackTime)) : ""}</div>${preview(c)}</a>`;
+  }
+  // A one-line "before you dial" reminder: the oldest open life issue, or else the last call's next step.
+  function preview(c) {
+    if (c.dnc) return "";
+    const open = (c.issues || []).filter((i) => !i.resolved);
+    if (open.length) return `<div class="prev">Open: ${esc(open[0].text)}${open.length > 1 ? ` <span class="muted">+${open.length - 1} more</span>` : ""}</div>`;
+    const last = [...(c.calls || [])].sort((a, b) => b.date.localeCompare(a.date))[0];
+    return last && last.next ? `<div class="prev">Next: ${esc(last.next)}</div>` : "";
   }
 
   // ---------- views ----------
