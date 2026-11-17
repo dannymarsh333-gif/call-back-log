@@ -22,7 +22,7 @@
 ## Ads (Nov 17, from the class motion-graphics guide)
 - [x] Square rebuild: media/ad/call-back-log-ad.mp4 (1080x1080, 60fps, music "Keep Smiling" from Mixkit). Source: media/ad/call-back-log-ad-square.html
 - [x] Contrarian + professor-tutor reviews applied (tutor 87/100)
-- [ ] Watch the MP4; note anything that feels off (one change at a time)
-- [ ] Put the new ad on the live site? (needs a push)
+- [x] Watched (no sound) on Nov 17: looked great
+- [x] On the live site Nov 17 (video player on the home page, tested desktop + phone, live)
 - [ ] 12-second loop -> media/ad-short/
 - [ ] Optional: showreel prompt, logo loop
