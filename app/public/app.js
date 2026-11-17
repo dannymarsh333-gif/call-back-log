@@ -16,16 +16,51 @@
   const uid = () => Math.random().toString(36).slice(2, 10);
   const find = (id) => state.contacts.find((c) => c.id === id);
 
+  // Where data lives: on your computer when server.js is running ("server"),
+  // otherwise in this browser only ("local"), which is how the GitHub Pages version works.
+  let mode = "server";
+  const KEY = "callbacklog.v1";
   async function load() {
-    const r = await fetch("/api/state");
-    state = await r.json();
+    try {
+      const r = await fetch("api/state", { cache: "no-store" });
+      if (!r.ok) throw new Error("no server");
+      const j = await r.json();
+      if (!j || !Array.isArray(j.contacts)) throw new Error("bad data");
+      state = j; mode = "server"; return;
+    } catch (e) { /* no server here: fall back to this browser */ }
+    mode = "local";
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { const j = JSON.parse(raw); if (j && Array.isArray(j.contacts)) { state = j; return; } }
+    } catch (e) { /* storage blocked or unreadable: start from the samples */ }
+    state = CallBackSample.sampleState();
   }
   async function save() {
-    const r = await fetch("/api/state", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state) });
-    if (!r.ok) throw new Error("Save failed");
+    if (mode === "server") {
+      const r = await fetch("api/state", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(state) });
+      if (!r.ok) throw new Error("Save failed");
+    } else {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    }
   }
   async function trySave() {
-    try { await save(); } catch (e) { alert("Could not save. Is the server still running?"); }
+    try { await save(); } catch (e) {
+      alert(mode === "server" ? "Could not save. Is the server still running?" : "Could not save in this browser. Private or incognito windows may block saving.");
+    }
+  }
+  function localNote() {
+    return mode === "local"
+      ? `<p class="note">Saved in this browser only. The sample contacts are fake. <button class="linkbtn" id="resetSample" type="button">Reset to samples</button></p>`
+      : "";
+  }
+  function bindReset() {
+    const b = document.getElementById("resetSample");
+    if (b) b.addEventListener("click", async () => {
+      if (!confirm("Erase everything in this browser and go back to the sample contacts?")) return;
+      state = CallBackSample.sampleState();
+      await trySave();
+      route();
+    });
   }
 
   // Overdue rule: due today = green label, 1 day overdue = yellow, 2+ days = red. Always with text.
@@ -67,7 +102,9 @@
       <h1>Today's callbacks</h1>
       <p class="muted">${esc(nice(t))}</p>
       <a class="btn primary block" href="#/add">+ Add contact</a>
-      ${due.length ? due.map(contactRow).join("") : `<div class="empty">No callbacks due today. Nice.</div>`}`;
+      ${due.length ? due.map(contactRow).join("") : `<div class="empty">No callbacks due today. Nice.</div>`}
+      ${localNote()}`;
+    bindReset();
   }
 
   function viewAll() {
@@ -75,7 +112,9 @@
     app.innerHTML = `
       <h1>All contacts</h1>
       <a class="btn primary block" href="#/add">+ Add contact</a>
-      ${list.length ? list.map(contactRow).join("") : `<div class="empty">No contacts yet.</div>`}`;
+      ${list.length ? list.map(contactRow).join("") : `<div class="empty">No contacts yet.</div>`}
+      ${localNote()}`;
+    bindReset();
   }
 
   function viewAdd() {
@@ -283,6 +322,6 @@
 
   window.addEventListener("hashchange", route);
   load().then(route).catch(() => {
-    app.innerHTML = `<div class="error">Could not reach the Call Back Log server. Start it with "node server.js" in the app folder.</div>`;
+    app.innerHTML = `<div class="error">Call Back Log could not start. Try reloading the page.</div>`;
   });
 })();
