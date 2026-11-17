@@ -15,4 +15,5 @@
 
 ## Housekeeping
 - [ ] Update ad-script.md to the new 46.5-second version
-- [ ] Push the Sunrise colors for the app to GitHub
+- [x] Push the Sunrise colors for the app to GitHub
+- [x] App is live: https://dannymarsh333-gif.github.io/call-back-log-app/ (update it with ./publish-site.sh)
