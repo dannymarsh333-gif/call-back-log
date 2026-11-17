@@ -5,7 +5,9 @@ A phone-friendly call-tracking app for a new insurance rep. Single user, runs on
 ## Run it
 1. Install Node.js (version 18 or newer).
 2. In this folder run: `node server.js`
-3. Open the address it prints. On your computer use `http://localhost:3000`. On your phone (same Wi-Fi) use the "On your phone" address.
+3. Open the address it prints. `http://localhost:3000` is the home page; the app itself is `http://localhost:3000/app.html`. On your phone (same Wi-Fi) use the "On your phone" address.
+
+`public/index.html` is the home page, `public/app.html` is the app, and `public/ad.html` is a copy of the ad from the AI class folder (copy it again after changing the ad).
 
 All data is saved in `data.json` next to `server.js`. That file is not committed to git. To reset to the fake sample contacts, stop the server and delete `data.json`.
 

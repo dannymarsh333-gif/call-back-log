@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Call Back Log Ad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#1B2140; --paper:#FFF4EC; --blue:#F0522F; --coral-ink:#C43A22; --mint:#2EC4A0; --sun:#FFC93C; --floor:#F7E3D3; --frame:#0E0E0D; }
+  html, body { margin:0; height:100%; background:var(--frame); }
+  #wrap { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:12px; box-sizing:border-box; }
+  #viewport { position:relative; width:min(100%, calc((100vh - 90px) * 16 / 9)); aspect-ratio:16/9; overflow:hidden; border-radius:10px; }
+  #stage { position:absolute; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; background:var(--paper); overflow:hidden; color:var(--ink);
+           font-family:"Inter Tight", "Segoe UI", system-ui, sans-serif; }
+  .shot { position:absolute; inset:0; visibility:hidden; overflow:hidden; }
+  .cam { position:absolute; inset:0; transform-origin:0 0; }
+  .serif { font-family:"Instrument Serif", Georgia, "Times New Roman", serif; font-style:italic; font-weight:400; letter-spacing:-0.01em; }
+  .wrow { position:absolute; display:flex; align-items:baseline; white-space:nowrap; line-height:1; }
+  .clip { display:inline-block; overflow:hidden; padding:0.04em 0.01em 0.14em; margin:-0.04em -0.01em -0.14em; vertical-align:bottom; }
+  .ch { display:inline-block; }
+  .text { position:absolute; display:flex; flex-wrap:wrap; column-gap:0.26em; line-height:1.08; }
+  .em { color:var(--blue); }
+  /* speech and thought bubbles */
+  .bubble { position:absolute; background:#fff; border:6px solid var(--ink); border-radius:46px; padding:26px 38px 30px; font-size:48px; font-weight:700;
+            line-height:1.15; letter-spacing:-0.02em; max-width:760px; display:flex; flex-wrap:wrap; column-gap:0.26em; box-sizing:border-box; transform-origin:20% 110%; }
+  .bubble.say::after { content:""; position:absolute; bottom:-27px; left:80px; width:42px; height:42px; background:#fff; border-right:6px solid var(--ink); border-bottom:6px solid var(--ink); transform:rotate(45deg); }
+  .bubble.say.right::after { left:auto; right:90px; }
+  .bubble .bw { display:inline-block; }
+  .puff { position:absolute; border-radius:50%; background:#fff; border:6px solid var(--ink); }
+  .note { position:absolute; left:0; top:0; font-weight:800; white-space:nowrap; }
+  .note.sticky { background:var(--sun); padding:10px 16px; border-radius:6px; font-size:30px; box-shadow:0 8px 18px rgba(20,20,19,.15); }
+  .note.mark { font-size:64px; color:var(--blue); background:#fff; width:96px; height:96px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(20,20,19,.15); }
+  /* phone + app screens (same look as the real app) */
+  .phone { position:absolute; width:440px; height:880px; border-radius:62px; background:var(--ink); box-shadow:0 40px 90px rgba(20,20,19,.25); }
+  .screen { position:absolute; inset:14px; border-radius:50px; overflow:hidden; background:#FFF4EC; font-family:"Inter Tight", system-ui, sans-serif; }
+  .ah { position:absolute; left:0; right:0; top:0; height:92px; padding:38px 22px 0; box-sizing:border-box; background:#fff; border-bottom:2px solid #F1DCCD;
+        display:flex; justify-content:space-between; align-items:center; font-size:21px; z-index:2; }
+  .ah b { font-weight:800; } .ah span { color:#5B6180; } .ah span i { font-style:normal; margin-left:14px; } .ah .on { color:var(--coral-ink); font-weight:800; }
+  .pane { position:absolute; left:0; right:0; top:92px; bottom:0; overflow:hidden; }
+  .content { position:absolute; left:0; right:0; top:0; padding:18px 18px 40px; box-sizing:border-box; }
+  .content h1 { font-size:30px; margin:4px 0 6px; letter-spacing:-0.02em; } .content h2 { font-size:20px; margin:20px 0 8px; }
+  .muted { color:#5B6180; font-size:18px; }
+  .acard { background:#fff; border:2px solid #F1DCCD; border-radius:14px; padding:14px 16px; margin-bottom:12px; font-size:19px; overflow:hidden; box-sizing:border-box; }
+  .acard.yellow { border-left:7px solid #FFC93C; } .acard.red { border-left:7px solid #E63946; } .acard.new { border-left:7px solid var(--blue); }
+  .rowtop { display:flex; justify-content:space-between; align-items:center; gap:8px; } .nm { font-weight:800; font-size:20px; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:14px; font-weight:800; white-space:nowrap; }
+  .b-due { background:#D5F5EC; color:#0E6B55; } .b-yellow { background:#FFE9A8; color:#6B4E00; } .b-red { background:#E63946; color:#fff; } .b-new { background:#FF6B4A; color:var(--ink); } .b-later { background:#FFE3D9; color:var(--coral-ink); }
+  .prev { margin-top:6px; font-size:16px; font-weight:800; color:var(--coral-ink); }
+  .abtn { display:block; text-align:center; background:#FF6B4A; color:var(--ink); font-weight:800; font-size:19px; padding:14px; border-radius:12px; margin:10px 0 14px; }
+  .abtn.ghost { background:#fff; color:var(--ink); border:2px solid #F1DCCD; }
+  .btns { display:flex; gap:10px; } .btns .abtn { flex:1; margin:8px 0; }
+  .step { color:#5B6180; font-size:16px; margin-top:6px; }
+  .field { background:#fff; border:2px solid #F1DCCD; border-radius:12px; padding:14px; font-size:20px; min-height:120px; box-sizing:border-box; }
+  .field.short { min-height:0; }
+  .caret { display:inline-block; width:3px; height:24px; background:var(--blue); vertical-align:-4px; margin-left:2px; }
+  .confirm { margin-top:12px; background:#D5F5EC; color:#0E6B55; font-weight:800; font-size:18px; border-radius:10px; padding:12px; }
+  .kb { position:absolute; left:0; right:0; bottom:0; height:250px; background:#F1DCCD; padding:14px 10px; box-sizing:border-box; display:grid; grid-template-columns:repeat(10,1fr); gap:8px; align-content:start; }
+  .kb i { display:block; height:44px; border-radius:7px; background:#fff; }
+  .kb .mic { grid-column:span 2; background:var(--blue); display:flex; align-items:center; justify-content:center; }
+  .issue { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:19px; }
+  .issue em { font-style:normal; font-size:15px; font-weight:800; border:2px solid #F1DCCD; border-radius:10px; padding:5px 10px; }
+  .call { transition:none; }
+  .call dt { font-weight:800; font-size:14px; color:#5B6180; margin-top:8px; text-transform:none; } .call dd { margin:0; font-size:18px; }
+  .call h3 { margin:0; font-size:19px; }
+  #controls { display:flex; align-items:center; gap:12px; width:min(100%, calc((100vh - 90px) * 16 / 9)); color:#eee; font:600 14px "Segoe UI", system-ui, sans-serif; }
+  #controls button { background:#2a2a28; color:#eee; border:1px solid #444; border-radius:8px; padding:8px 14px; font:inherit; cursor:pointer; min-width:84px; }
+  #controls button:focus-visible, #scrub:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  #scrub { flex:1; accent-color:var(--blue); }
+  #time { font-variant-numeric:tabular-nums; min-width:90px; text-align:right; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="viewport"><div id="stage"></div></div>
+  <div id="controls">
+    <button id="play" type="button">Pause</button>
+    <button id="restart" type="button">Restart</button>
+    <input id="scrub" type="range" min="0" max="46.5" step="0.01" value="0" aria-label="Animation time">
+    <span id="time">0.0 / 46.5s</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const DUR = 46.5, SW = 1920, SH = 1080;
+  const CLOCK = [1530, 330];
+  const INK = '#1B2140', BLUE = '#F0522F', SUN = '#FFC93C', FLOOR = '#F7E3D3';
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = (id) => document.getElementById(id);
+  const stage = $('stage');
+
+  // ---------- math ----------
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const P = (t, a, b) => clamp((t - a) / (b - a));
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const lerp2 = (A, B, p) => [lerp(A[0], B[0], p), lerp(A[1], B[1], p)];
+  const eo = (x) => 1 - Math.pow(1 - x, 3);
+  const eo5 = (x) => 1 - Math.pow(1 - x, 5);
+  const ei = (x) => x * x * x;
+  const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+  const eob = (x, s = 1.5) => (x <= 0 ? 0 : x >= 1 ? 1 : 1 + (s + 1) * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2));
+
+  // ---------- builders ----------
+  function el(tag, attrs, parent, html) {
+    const e = document.createElement(tag);
+    for (const k in attrs || {}) { if (k === 'style') e.style.cssText = attrs[k]; else e.setAttribute(k, attrs[k]); }
+    if (html != null) e.innerHTML = html;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function svg(parent) {
+    const s = document.createElementNS(NS, 'svg');
+    s.setAttribute('viewBox', '0 0 1920 1080'); s.setAttribute('width', '1920'); s.setAttribute('height', '1080');
+    s.style.cssText = 'position:absolute;left:0;top:0;overflow:visible';
+    parent.appendChild(s); return s;
+  }
+  function sv(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e); return e;
+  }
+  const pts = (list) => 'M' + list.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+
+  // Big type, letter by letter, each letter in its own mask.
+  function makeWord(parent, text, css, cls) {
+    const row = el('div', { class: 'wrow ' + (cls || ''), style: css }, parent);
+    const chars = [];
+    for (const c of text) { const m = el('span', { class: 'clip' }, row); chars.push(el('span', { class: 'ch' }, m, c === ' ' ? '&nbsp;' : c)); }
+    return { row, chars };
+  }
+  function playWord(w, t, tin, tout, stag = 0.024, dur = 0.32) {
+    const n = w.chars.length, end = tout + (n - 1) * stag + dur, on = t >= tin - 0.001 && t <= end;
+    w.row.style.visibility = on ? 'visible' : 'hidden';
+    if (!on) return;
+    w.chars.forEach((c, i) => {
+      const pin = eo5(P(t, tin + i * stag, tin + i * stag + dur)), pout = ei(P(t, tout + i * stag, tout + i * stag + dur));
+      c.style.transform = 'translateY(' + ((1 - pin) * 135 - pout * 135).toFixed(1) + '%)';
+    });
+  }
+  // Running text, word by word, wrapping. *word* is set in blue serif italic.
+  function makeText(parent, text, css) {
+    const box = el('div', { class: 'text', style: css }, parent);
+    const words = [];
+    let em = false;
+    text.split(' ').forEach((raw) => {
+      let w = raw;
+      const start = w.startsWith('*'), end = w.endsWith('*');
+      if (start) { em = true; w = w.slice(1); }
+      if (end) w = w.slice(0, -1);
+      const m = el('span', { class: 'clip' }, box);
+      words.push(el('span', { class: 'ch' + (em ? ' em serif' : '') }, m, w));
+      if (end) em = false;
+    });
+    return { row: box, chars: words };
+  }
+  const playText = (w, t, tin, tout) => playWord(w, t, tin, tout, 0.07, 0.4);
+
+  // Speech bubble whose words pop in one at a time.
+  function makeBubble(parent, words, css, cls) {
+    const b = el('div', { class: 'bubble ' + (cls || 'say'), style: css }, parent);
+    const ws = words.map((w) => el('span', { class: 'bw' + (w.cls ? ' ' + w.cls : ''), style: w.style || '' }, b, w.text));
+    return { b, ws };
+  }
+  function playBubble(bb, t, tin, tout, times) {
+    const show = eob(P(t, tin, tin + 0.35), 1.6) * (1 - ei(P(t, tout - 0.3, tout)));
+    bb.b.style.visibility = t >= tin && t <= tout ? 'visible' : 'hidden';
+    bb.b.style.transform = 'scale(' + show.toFixed(4) + ')';
+    bb.ws.forEach((w, i) => {
+      const p = eob(P(t, times[i], times[i] + 0.22), 1.8);
+      w.style.opacity = clamp(p * 3).toFixed(3);
+      w.style.transform = 'translateY(' + ((1 - p) * 26).toFixed(1) + 'px) scale(' + lerp(0.6, 1, clamp(p)).toFixed(3) + ')';
+    });
+  }
+
+  // ---------- the office ----------
+  // A stick figure: one ink line for the body, two-part arms and legs, an open head.
+  function stick(parent) {
+    const g = sv('g', {}, parent);
+    const st = { stroke: INK, 'stroke-width': 10, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' };
+    const f = { g, body: sv('path', st, g), legA: sv('path', st, g), legB: sv('path', st, g), armA: sv('path', st, g), armB: sv('path', st, g),
+      head: sv('circle', { r: 42, fill: '#fff', stroke: INK, 'stroke-width': 10 }, g) };
+    f.pose = (o) => {
+      f.body.setAttribute('d', pts([o.hip, o.sh]));
+      f.legA.setAttribute('d', pts([o.hip, o.kA, o.fA]));
+      f.legB.setAttribute('d', pts([o.hip, o.kB, o.fB]));
+      f.armA.setAttribute('d', pts([o.sh, o.eA, o.hA]));
+      f.armB.setAttribute('d', pts([o.sh, o.eB, o.hB]));
+      f.head.setAttribute('cx', o.head[0].toFixed(1)); f.head.setAttribute('cy', o.head[1].toFixed(1));
+    };
+    return f;
+  }
+  function paperStack(parent, n) {
+    const g = sv('g', {}, parent), sheets = [];
+    for (let k = 0; k < n; k++) {
+      const s = sv('g', {}, g), jx = ((k * 37) % 13) - 6;
+      sv('rect', { x: -66 + jx, y: -16, width: 132, height: 16, rx: 3, fill: '#fff', stroke: INK, 'stroke-width': 4 }, s);
+      sv('path', { d: 'M' + (-52 + jx) + ' -8 H' + (14 + jx), stroke: '#B8BEC8', 'stroke-width': 3, 'stroke-linecap': 'round' }, s);
+      sheets.push({ g: s, k, jx, rot: ((k * 53) % 5) - 2 });
+    }
+    return { g, sheets };
+  }
+  function office(root) {
+    const cam = el('div', { class: 'cam' }, root);
+    const s = svg(cam);
+    sv('rect', { x: -400, y: 900, width: 2720, height: 600, fill: FLOOR }, s);
+    sv('path', { d: 'M-400 900 H2320', stroke: INK, 'stroke-width': 8 }, s);
+    // wall clock
+    const clock = sv('g', {}, s);
+    sv('circle', { cx: 1530, cy: 330, r: 74, fill: '#fff', stroke: INK, 'stroke-width': 8 }, clock);
+    const hourHand = sv('path', { d: 'M0 0 V-34', stroke: INK, 'stroke-width': 9, 'stroke-linecap': 'round', transform: 'translate(1530 330)' }, clock);
+    const minHand = sv('path', { d: 'M0 0 V-54', stroke: '#2EC4A0', 'stroke-width': 7, 'stroke-linecap': 'round', transform: 'translate(1530 330)' }, clock);
+    sv('circle', { cx: 1530, cy: 330, r: 8, fill: INK }, clock);
+    // chair
+    sv('path', { d: 'M560 520 V708 M560 708 H700 M630 708 V860 M570 880 H700', stroke: INK, 'stroke-width': 10, 'stroke-linecap': 'round', fill: 'none' }, s);
+    // desk, monitor, plant
+    sv('rect', { x: 760, y: 620, width: 620, height: 22, rx: 4, fill: INK }, s);
+    sv('path', { d: 'M800 642 V900 M1340 642 V900', stroke: INK, 'stroke-width': 10, 'stroke-linecap': 'round' }, s);
+    sv('rect', { x: 1150, y: 440, width: 190, height: 130, rx: 12, fill: '#fff', stroke: INK, 'stroke-width': 8 }, s);
+    sv('path', { d: 'M1245 570 V620 M1205 620 H1285', stroke: INK, 'stroke-width': 8, 'stroke-linecap': 'round' }, s);
+    sv('path', { d: 'M1172 470 H1290 M1172 494 H1250 M1172 518 H1306', stroke: '#C9CED6', 'stroke-width': 7, 'stroke-linecap': 'round' }, s);
+    sv('path', { d: 'M1712 900 L1700 820 H1780 L1768 900 Z', fill: '#fff', stroke: INK, 'stroke-width': 8, 'stroke-linejoin': 'round' }, s);
+    sv('path', { d: 'M1740 820 C1700 760 1690 720 1712 690 M1740 820 C1760 760 1790 740 1800 700 M1740 820 C1742 760 1750 720 1744 660', stroke: '#1F7A4D', 'stroke-width': 8, 'stroke-linecap': 'round', fill: 'none' }, s);
+    // desk phone base
+    sv('rect', { x: 860, y: 596, width: 100, height: 26, rx: 8, fill: INK }, s);
+    const cord = sv('path', { d: '', stroke: INK, 'stroke-width': 4, fill: 'none' }, s);
+    const stackHome = sv('g', {}, s);
+    const worker = stick(s);
+    const handset = sv('rect', { x: -14, y: -40, width: 28, height: 80, rx: 12, fill: BLUE }, s);
+    const front = sv('g', {}, s);
+    return { cam, s, clock, hourHand, minHand, cord, handset, worker, stackHome, front };
+  }
+  // The worker sitting at the desk; shared by both office shots.
+  const SEAT = { hip: [640, 700], sh: [652, 562], head: [660, 494], kA: [748, 700], fA: [752, 892], kB: [736, 708], fB: [728, 892] };
+  function seated(dx, dy, lean) {
+    const sh = [SEAT.sh[0] + dx + lean, SEAT.sh[1] + dy], head = [SEAT.head[0] + dx + lean * 1.3, SEAT.head[1] + dy];
+    return Object.assign({}, SEAT, { sh, head });
+  }
+  function camTo(o, cx, cy, z) {
+    o.cam.style.transform = 'translate(' + (960 - cx * z).toFixed(1) + 'px,' + (540 - cy * z).toFixed(1) + 'px) scale(' + z.toFixed(4) + ')';
+  }
+
+  // ---------- phone + app ----------
+  function phone(parent, x, y) {
+    const ph = el('div', { class: 'phone', style: 'left:' + x + 'px;top:' + y + 'px' }, parent);
+    const scr = el('div', { class: 'screen' }, ph);
+    el('div', { class: 'ah' }, scr, '<b>Call Back Log</b><span><i class="on">Today</i><i>All</i></span>');
+    return { ph, scr };
+  }
+  const card = (name, phoneNo, kind, label, extra) => '<div class="acard ' + (kind === 'yellow' || kind === 'red' || kind === 'new' ? kind : '') + '"><div class="rowtop"><span class="nm">' + name + '</span><span class="badge b-' + kind + '">' + label + '</span></div><div class="muted">' + phoneNo + '</div>' + (extra ? '<div class="prev">' + extra + '</div>' : '') + '</div>';
+  const TODAY_CARDS = card('Jane Doe', '555-0148 · 2:00 PM', 'due', 'Due today') + card('Mark Rivera', '555-0122', 'yellow', '1 day overdue') + card('Priya Shah', '555-0103', 'red', '3 days overdue');
+
+  // ---------- shots ----------
+  const shots = [];
+  function shot(a, b, build, render) { const root = el('div', { class: 'shot' }, stage); shots.push({ a, b, root, ctx: build(root) || {}, render }); }
+
+  // A. The office: the call ends, the hour is gone, the stack arrives, overload. (0 - 19)
+  shot(0, 19, (root) => {
+    const o = office(root);
+    const co = stick(o.s);
+    const stack = paperStack(o.s, 10);
+    // the overload swarm: each note gets its own spot, clear of the body, the stack and each other
+    const swarmItems = [['555-0142', 'sticky', 250, 200], ['?', 'mark', 480, 300], ['Call back??', 'sticky', 240, 420], ['Tues or Thurs?', 'sticky', 300, 620],
+      ['!', 'mark', 470, 540], ['Jane or June?', 'sticky', 330, 800], ['?', 'mark', 870, 420], ['Acme? Harbor?', 'sticky', 920, 790],
+      ['3 PM?', 'sticky', 1210, 370], ['quote??', 'sticky', 1260, 730], ['?', 'mark', 1470, 640]];
+    const swarm = swarmItems.map(([txt, kind, x, y], i) => ({ i, x, y, el: el('div', { class: 'note ' + kind }, o.cam, txt) }));
+    const hook = makeBubble(o.cam, [
+      { text: 'Ok,' }, { text: 'alright,' }, { text: 'sounds' }, { text: 'good,' },
+      { text: 'FANTASTIC,', style: 'color:' + BLUE + ';font-size:70px;font-weight:800;letter-spacing:-0.04em' },
+      { text: 'great,' }, { text: 'have' }, { text: 'a' }, { text: 'great' }, { text: 'day!' }], 'left:690px;top:150px;width:740px');
+    // the thought sits to his left so the wall clock stays in view while the hour flies by
+    const think1 = makeBubble(o.cam, 'What did I just talk about for the past hour?'.split(' ').map((w) => ({ text: w })), 'left:190px;top:110px;width:520px;font-family:Instrument Serif,Georgia,serif;font-style:italic;font-weight:400;font-size:58px', 'think');
+    const puffs = [el('div', { class: 'puff', style: 'left:585px;top:405px;width:40px;height:40px' }, o.cam), el('div', { class: 'puff', style: 'left:520px;top:345px;width:58px;height:58px' }, o.cam)];
+    const coSay = makeBubble(o.cam, 'Here, some notes from my calls today. Organize this.'.split(' ').map((w) => ({ text: w, style: w === 'Organize' || w === 'this.' ? 'color:' + BLUE : '' })), 'left:700px;top:130px;width:700px', 'say right');
+    return { o, co, stack, swarm, hook, think1, puffs, coSay };
+  }, (c, t) => {
+    const o = c.o;
+    // camera: settle on the worker, push in on the thought, pull back for the coworker, hard cut into the overload
+    let z, cx, cy;
+    if (t < 6) { z = lerp(1.18, 1.24, eio(P(t, 0, 6))); cx = 860; cy = 520; }
+    else if (t < 9.4) { const p = eio(P(t, 6, 9.4)); z = lerp(1.24, 1.28, p); cx = lerp(860, 880, p); cy = lerp(520, 470, p); }
+    else if (t < 13.8) { const p = eio(P(t, 9.4, 10.1)); z = lerp(1.28, 1.0, p); cx = lerp(880, 1060, p); cy = lerp(470, 540, p); }
+    else { z = 1.32 + 0.04 * P(t, 13.8, 19); cx = 820; cy = 470; }
+    camTo(o, cx, cy, z);
+
+    // the clock: an hour flies by while he stares
+    const mins = 20 + 60 * eio(P(t, 6.5, 8.7));
+    o.minHand.setAttribute('transform', 'translate(' + CLOCK[0] + ' ' + CLOCK[1] + ') rotate(' + (mins * 6).toFixed(1) + ')');
+    o.hourHand.setAttribute('transform', 'translate(' + CLOCK[0] + ' ' + CLOCK[1] + ') rotate(' + (90 + mins * 0.5).toFixed(1) + ')');
+
+    // the worker
+    const over = t >= 13.8;
+    const shake = over && t < 18.9 ? 3.5 * Math.sin(t * 13) : 0;
+    const lean = over ? -6 * eo(P(t, 13.8, 14.3)) : 0;
+    const p = seated(shake, 0, lean);
+    const hang = eio(P(t, 5.0, 5.6));
+    const ear = [p.head[0] + 34, p.head[1] + 22], deskPt = [912, 600];
+    const hB = lerp2(ear, deskPt, hang), eB = lerp2([p.sh[0] + 46, p.sh[1] + 56], [p.sh[0] + 120, p.sh[1] + 40], hang);
+    let hA = [p.sh[0] + 70, p.sh[1] + 120], eA = [p.sh[0] + 30, p.sh[1] + 80];
+    if (over) { // hands up to the head
+      const u = eo(P(t, 13.8, 14.2));
+      hA = lerp2(hA, [p.head[0] - 40, p.head[1] - 20], u); eA = lerp2(eA, [p.sh[0] - 60, p.sh[1] - 10], u);
+    }
+    o.worker.pose(Object.assign(p, { eA, hA, eB, hB }));
+    o.handset.setAttribute('transform', 'translate(' + hB[0].toFixed(1) + ' ' + hB[1].toFixed(1) + ') rotate(' + lerp(-18, 90, hang).toFixed(1) + ')');
+    o.cord.setAttribute('d', 'M' + hB[0].toFixed(1) + ' ' + (hB[1] + 30).toFixed(1) + ' C' + (hB[0] + 40) + ' ' + (hB[1] + 140) + ' 880 650 900 610');
+
+    // the coworker walks in talking, drops the stack; the cut to the overload takes him away
+    const walkIn = eio(P(t, 9.3, 11.0));
+    const x = lerp(2150, 1500, walkIn);
+    const sw = t > 9.3 && t < 11.0 ? Math.sin(t * 11) : 0;
+    const carryH = lerp2([x - 140, 636], [x - 30, 700], eio(P(t, 11.2, 11.6)));
+    const carryE = lerp2([x - 70, 640], [x - 16, 640], eio(P(t, 11.2, 11.6)));
+    c.co.pose({ hip: [x, 700], sh: [x, 562], head: [x, 494], kA: [x + 20 * sw + 6, 800], fA: [x + 44 * sw, 896], kB: [x - 20 * sw + 6, 800], fB: [x - 44 * sw, 896],
+      eA: carryE, hA: carryH, eB: [carryE[0] + 10, carryE[1] + 6], hB: [carryH[0] + 18, carryH[1] + 4] });
+    c.co.g.style.visibility = t > 9.2 && !over ? 'visible' : 'hidden';
+    let sx = x - 160, sy = 640;
+    if (t >= 11.2) { const d = ei(P(t, 11.2, 11.5)); sx = lerp(x - 160, 1052, d); sy = lerp(640, 620, d); }
+    const bump = t > 11.5 ? 12 * Math.abs(Math.sin((t - 11.5) * 16)) * Math.exp(-(t - 11.5) * 9) : 0;
+    c.stack.g.setAttribute('transform', 'translate(' + sx.toFixed(1) + ' ' + (sy - bump).toFixed(1) + ')');
+    c.stack.g.style.visibility = t > 9.2 ? 'visible' : 'hidden';
+    // when he's overwhelmed, the sheets fly up off the desk (they become the sticky notes) and the desk is left clear
+    c.stack.sheets.forEach((s) => {
+      const v = over ? eo(P(t, 13.85 + (9 - s.k) * 0.06, 14.35 + (9 - s.k) * 0.06)) : 0;
+      const dx = v * (s.k % 2 ? 1 : -1) * (60 + s.k * 18), dy = -v * (220 + s.k * 25);
+      s.g.setAttribute('transform', 'translate(' + dx.toFixed(1) + ' ' + (-s.k * 15 + dy).toFixed(1) + ') rotate(' + (s.rot + v * (s.k % 2 ? 50 : -50)).toFixed(1) + ') scale(' + (1 - v).toFixed(3) + ')');
+      s.g.style.opacity = (1 - v).toFixed(3);
+    });
+
+    // bubbles
+    playBubble(c.hook, t, 0.15, 5.9, [0.25, 0.65, 1.0, 1.3, 1.75, 2.75, 3.25, 3.5, 3.7, 3.95]);
+    playBubble(c.think1, t, 6.2, 9.4, c.think1.ws.map((_, i) => 6.35 + i * 0.12));
+    playBubble(c.coSay, t, 10.3, 13.7, c.coSay.ws.map((_, i) => 10.45 + i * 0.15 + (i >= 7 ? 0.25 : 0)));
+    c.puffs.forEach((pf, i) => {
+      const a = P(t, 6.2 + i * 0.1, 6.5 + i * 0.1) * (1 - P(t, 9.1, 9.4));
+      pf.style.visibility = t > 6.2 && t < 9.4 ? 'visible' : 'hidden';
+      pf.style.transform = 'scale(' + eob(a, 1.6).toFixed(3) + ')';
+    });
+
+    // the overload: notes burst out of the paper stack to their own spots, jitter there, then get sucked into his head
+    const head = p.head, pile = [1052, 540];
+    c.swarm.forEach((s) => {
+      const i = s.i, born = 13.9 + i * 0.1, ap = eob(P(t, born, born + 0.4), 1.6);
+      const gone = ei(P(t, 18.2 + i * 0.02, 18.8 + i * 0.02));
+      const fly = eo(P(t, born, born + 0.45));
+      const ox = lerp(pile[0], s.x + 12 * Math.sin(t * 2.6 + i), fly), oy = lerp(pile[1], s.y + 10 * Math.cos(t * 2.2 + i * 1.7), fly);
+      const nx = lerp(ox, head[0], gone), ny = lerp(oy, head[1], gone);
+      s.el.style.visibility = t > born && t < 19 ? 'visible' : 'hidden';
+      s.el.style.transform = 'translate(' + nx.toFixed(1) + 'px,' + ny.toFixed(1) + 'px) translate(-50%,-50%) rotate(' + (8 * Math.sin(t * 4 + i)).toFixed(1) + 'deg) scale(' + (ap * (1 - gone)).toFixed(3) + ')';
+    });
+  });
+
+  // B. The app: what it does, then Jane Doe's timeline. (19 - 36)
+  shot(19, 36, (root) => {
+    const ph = phone(root, 480, 100);
+    const panes = {
+      today: el('div', { class: 'pane' }, ph.scr, '<div class="content"><h1>Today\'s callbacks</h1><div class="muted">Thursday, Nov 12</div><div class="abtn">+ Add contact</div>' +
+        card('Jane Doe', '555-0148 · 2:00 PM', 'due', 'Due today', 'Open: Baby due in March') +
+        '<div class="acard flipA"><div class="rowtop"><span class="nm">Mark Rivera</span><span class="badge">Due today</span></div><div class="muted">555-0122</div></div>' +
+        '<div class="acard flipB"><div class="rowtop"><span class="nm">Priya Shah</span><span class="badge">1 day overdue</span></div><div class="muted">555-0103</div></div></div>'),
+      topics: el('div', { class: 'pane' }, ph.scr, '<div class="content"><div class="step">Jane Doe · Step 1 of 6</div><h1>What topics did you cover?</h1><div class="muted" style="margin-bottom:12px">Tap the box, then use your keyboard\'s microphone to talk.</div><div class="field"><span class="typed"></span><span class="caret"></span></div><div class="btns"><div class="abtn ghost">Back</div><div class="abtn">Next</div></div></div>' +
+        '<div class="kb">' + '<i></i>'.repeat(18) + '<i class="mic"><svg width="22" height="30" viewBox="0 0 22 30"><rect x="6" y="1" width="10" height="18" rx="5" fill="#fff"/><path d="M2 14 a9 9 0 0 0 18 0 M11 23 V29" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg></i></div>'),
+      date: el('div', { class: 'pane' }, ph.scr, '<div class="content"><div class="step">Jane Doe · Step 4 of 6</div><h1>When should you call back?</h1><div class="muted" style="margin-bottom:10px">Say or type it</div><div class="field short"><span class="typed2"></span><span class="caret"></span></div><div class="confirm">Callback: Thursday, Nov 19 at 2:00 PM. Is that right?</div><div class="btns"><div class="abtn ghost">Back</div><div class="abtn">Next</div></div></div>'),
+      jane: el('div', { class: 'pane' }, ph.scr, ''),
+    };
+    const call = (date, rows) => '<div class="acard call"><h3>' + date + '</h3><dl>' + rows.map(([k, v]) => '<dt>' + k + '</dt><dd>' + v + '</dd>').join('') + '</dl></div>';
+    // After the debrief: today's call is on top, and her badge shows the new callback date
+    const jc = el('div', { class: 'content' }, panes.jane,
+      '<div class="muted">&larr; Back</div><h1>Jane Doe <span class="badge b-later" style="vertical-align:6px">Due Thursday, Nov 19</span></h1>' +
+      '<div class="acard"><div class="muted">Phone: 555-0148</div><div class="muted">Next callback: Thursday, Nov 19 at 2:00 PM</div></div>' +
+      '<div class="btns"><div class="abtn">Call 555-0148</div><div class="abtn ghost">Finish call</div></div>' +
+      '<h2>Open issues</h2><div class="acard"><div class="issue"><span>Baby due in March</span><em>Resolve</em></div></div>' +
+      '<h2>Call history (newest first)</h2>' +
+      call('Thursday, Nov 12', [['Topics covered', 'Comparing term vs whole life. Already with Acme Mutual.'], ['Next points of progress', 'Send a 20-year term quote']]) +
+      call('Thursday, Nov 5', [['Objections', 'Worried about the monthly cost'], ['Life issues', 'Baby due in March']]) +
+      call('Thursday, Oct 29', [['Topics covered', 'Asked about disability coverage'], ['Companies discussed', 'Mentioned Harbor Life']]));
+    const calls = Array.from(jc.querySelectorAll('.call'));
+    const cap = (txt, size) => makeText(root, txt, 'left:1060px;top:0;width:760px;font-size:' + size + 'px;font-weight:800;letter-spacing:-0.035em');
+    const caps = [
+      [cap('Meet *Call* *Back* *Log.*', 120), 0.25, 1.9],
+      [cap('Missed one? It turns *yellow.* Then *red.*', 92), 2.05, 4.0],
+      [cap('After each call, just say what happened.', 76), 4.3, 8.1],
+      [cap('Here\'s *Jane* *Doe.*', 120), 8.6, 10.3],
+      [cap('Today: term vs. *whole* *life.*', 96), 10.5, 12.3],
+      [cap('Last week: *baby* *due* *in* *March.*', 96), 12.5, 14.4],
+      [cap('Before that: *disability.*', 96), 14.6, 16.4],
+    ];
+    // paint "yellow" and "red" as the badges they describe
+    caps[1][0].chars.forEach((w) => {
+      if (w.textContent === 'yellow.') w.style.cssText = 'background:#FFC93C;color:#1B2140;border-radius:14px;padding:0 14px 6px';
+      if (w.textContent === 'red.') w.style.cssText = 'background:#E63946;color:#fff;border-radius:14px;padding:0 14px 6px';
+    });
+    const chipRow = el('div', { style: 'position:absolute;left:1060px;top:690px;width:780px;display:flex;flex-wrap:wrap;gap:16px' }, root);
+    const chips = ['Topics', 'Companies', 'Next steps', 'Callback date'].map((w) => el('div', { style: 'font-size:34px;font-weight:700;padding:12px 22px;border-radius:999px;border:4px solid ' + INK + ';white-space:nowrap' }, chipRow, w));
+    return { ph, panes, jc, calls, caps, chips, flipA: panes.today.querySelector('.flipA'), flipB: panes.today.querySelector('.flipB'),
+      typed: panes.topics.querySelector('.typed'), typed2: panes.date.querySelector('.typed2'), carets: Array.from(ph.scr.querySelectorAll('.caret')),
+      confirm: panes.date.querySelector('.confirm'), mic: panes.topics.querySelector('.mic'), stops: null };
+  }, (c, t) => {
+    // phone arrives from the collapsed swarm, grows a little for Jane, then leaves
+    const arrive = eob(P(t, 0, 0.6), 1.4);
+    const grow = eio(P(t, 8.3, 8.9));
+    const leave = ei(P(t, 16.5, 17));
+    const sc = lerp(0.15, 1, arrive) * lerp(1, 1.08, grow) * lerp(1, 0.5, leave);
+    c.ph.ph.style.transform = 'translate(' + lerp(0, 60, grow).toFixed(1) + 'px,0) scale(' + sc.toFixed(4) + ') rotate(' + lerp(-8, 0, arrive).toFixed(2) + 'deg)';
+    c.ph.ph.style.opacity = (1 - leave).toFixed(3);
+
+    const order = [['today', 0, 4.2], ['topics', 4.2, 6.6], ['date', 6.6, 8.4], ['jane', 8.4, 99]];
+    order.forEach(([k, a, b]) => {
+      const pane = c.panes[k], on = t >= a && t < b;
+      pane.style.visibility = on ? 'visible' : 'hidden';
+      pane.style.transform = 'translateX(' + ((1 - eo5(P(t, a, a + 0.35))) * 100).toFixed(2) + '%)';
+    });
+
+    // a day passes: Mark goes yellow, Priya goes red, each with a little pop
+    const flip = (card, at, before, after) => {
+      const on = t >= at, s = card.querySelector('.badge');
+      card.className = 'acard ' + (on ? after[0] : before[0]) + ' flip';
+      s.className = 'badge b-' + (on ? after[1] : before[1]);
+      s.textContent = on ? after[2] : before[2];
+      s.style.transform = 'scale(' + (1 + 0.35 * Math.sin(Math.PI * P(t, at, at + 0.35))).toFixed(3) + ')';
+    };
+    flip(c.flipA, 2.5, ['', 'due', 'Due today'], ['yellow', 'yellow', '1 day overdue']);
+    flip(c.flipB, 3.2, ['yellow', 'yellow', '1 day overdue'], ['red', 'red', '2 days overdue']);
+
+    // dictation fills the boxes
+    const s1 = 'Comparing term vs whole life. Already with Acme Mutual.';
+    c.typed.textContent = s1.slice(0, Math.floor(clamp((t - 4.5) * 28, 0, s1.length)));
+    c.mic.style.transform = 'scale(' + (t > 4.4 && t < 6.5 ? 1 + 0.06 * Math.sin(t * 9) : 1).toFixed(3) + ')';
+    const s2 = 'Thursday at 2';
+    c.typed2.textContent = s2.slice(0, Math.floor(clamp((t - 6.85) * 20, 0, s2.length)));
+    c.confirm.style.opacity = eo(P(t, 7.6, 7.85)).toFixed(3);
+    c.carets.forEach((k) => { k.style.opacity = Math.floor(t / 0.45) % 2 ? 0 : 1; });
+
+    // Jane's timeline scrolls to each call as the caption names it
+    if (!c.stops) {
+      const top = (e) => e.offsetTop - 14;
+      const max = Math.max(0, c.jc.offsetHeight - c.panes.jane.offsetHeight);
+      c.stops = [top(c.calls[0]), top(c.calls[1]), top(c.calls[2])].map((v) => Math.min(v, max));
+    }
+    const S = c.stops;
+    let y = 0;
+    y = lerp(y, S[0], eio(P(t, 10.3, 11.0)));
+    y = lerp(y, S[1], eio(P(t, 12.3, 13.0)));
+    y = lerp(y, S[2], eio(P(t, 14.4, 15.1)));
+    c.jc.style.transform = 'translateY(' + (-y).toFixed(1) + 'px)';
+    const active = t >= 10.5 && t < 12.3 ? 0 : t >= 12.5 && t < 14.4 ? 1 : t >= 14.6 && t < 16.4 ? 2 : -1;
+    c.calls.forEach((k, i) => { k.style.boxShadow = i === active ? '0 0 0 4px ' + BLUE : 'none'; k.style.borderColor = i === active ? BLUE : '#F1DCCD'; });
+
+    c.caps.forEach(([w, a, b], idx) => {
+      playText(w, t, a, b);
+      if (w.row.style.visibility === 'visible') {
+        if (!w.h) w.h = w.row.offsetHeight;
+        w.row.style.top = (540 - w.h / 2 - (idx === 2 ? 70 : 0)).toFixed(1) + 'px';
+      }
+    });
+    c.chips.forEach((ch, i) => {
+      const p = eob(P(t, 4.9 + i * 0.2, 5.3 + i * 0.2), 1.7) * (1 - ei(P(t, 7.8, 8.1)));
+      ch.style.visibility = t > 4.8 && t < 8.15 ? 'visible' : 'hidden';
+      ch.style.transform = 'scale(' + p.toFixed(3) + ')';
+    });
+  });
+
+  // C. One week later: Jane is up today, he glances, and opens with the detail he logged. (36 - 43)
+  shot(36, 43, (root) => {
+    const o = office(root);
+    o.clock.style.display = 'none';
+    const when = makeText(o.cam, 'One week later. *Thursday,* *2:00* *PM.*', 'left:120px;top:80px;width:1000px;font-size:62px;font-weight:800;letter-spacing:-0.03em');
+    const ph = phone(root, 1380, 120);
+    el('div', { class: 'pane' }, ph.scr, '<div class="content"><h1>Today\'s callbacks</h1><div class="muted">Thursday, Nov 19</div><div class="abtn">+ Add contact</div>' +
+      '<div class="jane">' + card('Jane Doe', '555-0148 · 2:00 PM', 'due', 'Due today', 'Open: Baby due in March') + '</div>' +
+      card('Mark Rivera', '555-0122', 'due', 'Due today') + card('Sam Lee', '555-0161', 'due', 'Due today') + '</div>');
+    const jane = ph.scr.querySelector('.jane .acard');
+    const hello = makeBubble(o.cam, [{ text: 'Jane!' }, { text: 'How\'s' }, { text: 'the' }, { text: 'baby', style: 'color:' + BLUE }, { text: 'prep', style: 'color:' + BLUE }, { text: 'going?' }], 'left:470px;top:200px;width:auto', 'say');
+    return { o, when, ph, jane, hello };
+  }, (c, t) => {
+    const o = c.o;
+    const out = eio(P(t, 0, 1.2));
+    camTo(o, lerp(820, 1000, out), 560, lerp(1.5, 1.0, out));
+    playText(c.when, t, 0.3, 2.9); // out before he starts talking
+    const p = seated(0, 0, -6 * eio(P(t, 3.0, 3.5)));
+    // point at the phone, then pick up the handset and call
+    const point = eob(P(t, 1.5, 2.0), 1.5) * (1 - eio(P(t, 2.5, 2.9)));
+    const lift = eio(P(t, 2.8, 3.3));
+    const ear = [p.head[0] + 34, p.head[1] + 22];
+    let eB = lerp2([p.sh[0] + 120, p.sh[1] + 40], [p.sh[0] + 140, p.sh[1] - 20], point);
+    let hB = lerp2([912, 600], [p.sh[0] + 260, p.sh[1] - 50], point);
+    hB = lerp2(hB, ear, lift); eB = lerp2(eB, [p.sh[0] + 46, p.sh[1] + 56], lift);
+    o.worker.pose(Object.assign(p, { eA: [p.sh[0] + 30, p.sh[1] + 80], hA: [p.sh[0] + 70, p.sh[1] + 120], eB, hB }));
+    const hs = lift > 0 ? hB : [912, 600];
+    o.handset.setAttribute('transform', 'translate(' + hs[0].toFixed(1) + ' ' + hs[1].toFixed(1) + ') rotate(' + lerp(90, -18, lift).toFixed(1) + ')');
+    o.cord.setAttribute('d', 'M' + hs[0].toFixed(1) + ' ' + (hs[1] + 30).toFixed(1) + ' C' + (hs[0] + 40) + ' ' + (hs[1] + 140) + ' 880 650 900 610');
+    const ph = eo5(P(t, 0.6, 1.3));
+    c.ph.ph.style.transform = 'translateX(' + ((1 - ph) * 700).toFixed(1) + 'px) scale(0.82)';
+    const glow = P(t, 1.6, 2.0) * (1 - P(t, 6.4, 6.9));
+    c.jane.style.boxShadow = glow > 0 ? '0 0 0 ' + (4 * glow).toFixed(1) + 'px ' + BLUE : 'none';
+    playBubble(c.hello, t, 3.4, 6.9, c.hello.ws.map((_, i) => 3.55 + i * 0.18));
+  });
+
+  // D. End card. (43 - 46.5)
+  shot(43, 46.51, (root) => {
+    const name = makeWord(root, 'Call Back Log', 'left:0;right:0;justify-content:center;top:330px;font-size:210px;font-weight:800;letter-spacing:-0.055em');
+    const line = makeWord(root, 'Remember every call.', 'left:0;right:0;justify-content:center;top:600px;font-size:120px;color:' + BLUE, 'serif');
+    const row = el('div', { style: 'position:absolute;left:0;right:0;top:830px;display:flex;justify-content:center;gap:16px' }, root,
+      ['Talk it in', 'See the timeline', 'See every missed callback'].map((w) => '<span style="font-size:32px;font-weight:700;padding:12px 24px;border-radius:999px;border:4px solid ' + INK + '">' + w + '</span>').join(''));
+    return { name, line, chips: Array.from(row.children) };
+  }, (c, t) => {
+    playWord(c.name, t, 0.1, 99);
+    playWord(c.line, t, 0.6, 99, 0.03, 0.4);
+    c.name.row.style.transform = 'scale(' + (1 + 0.012 * t).toFixed(4) + ')';
+    c.chips.forEach((ch, i) => { const p = eob(P(t, 1.1 + i * 0.15, 1.5 + i * 0.15), 1.6); ch.style.transform = 'scale(' + p.toFixed(3) + ')'; ch.style.opacity = clamp(p * 2).toFixed(3); });
+  });
+
+  // ---------- render ----------
+  function render(t) {
+    shots.forEach((s, i) => {
+      const last = i === shots.length - 1;
+      const on = t >= s.a && (t < s.b || (last && t <= DUR));
+      s.root.style.visibility = on ? 'visible' : 'hidden';
+      if (on) s.render(s.ctx, t - s.a);
+    });
+  }
+
+  // ---------- player ----------
+  const viewport = $('viewport');
+  function fit() { stage.style.transform = 'scale(' + viewport.clientWidth / SW + ')'; }
+  window.addEventListener('resize', fit);
+  fit();
+  let t = 0, playing = true, last = null;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) playing = false;
+  const jump = location.hash.match(/t=([\d.]+)/); // open with #t=30 to land paused on that moment
+  if (jump) { t = clamp(+jump[1], 0, DUR); playing = false; }
+  const playBtn = $('play'), scrub = $('scrub'), time = $('time');
+  function show() {
+    render(t);
+    scrub.value = t;
+    time.textContent = t.toFixed(1) + ' / ' + DUR + 's';
+    playBtn.textContent = playing ? 'Pause' : (t >= DUR ? 'Replay' : 'Play');
+  }
+  function tick(now) {
+    if (playing) {
+      if (last !== null) t = Math.min(DUR, t + (now - last) / 1000);
+      last = now;
+      if (t >= DUR) { playing = false; last = null; }
+    } else last = null;
+    show();
+    requestAnimationFrame(tick);
+  }
+  playBtn.addEventListener('click', () => { if (!playing && t >= DUR) t = 0; playing = !playing; last = null; show(); });
+  $('restart').addEventListener('click', () => { t = 0; playing = true; last = null; show(); });
+  scrub.addEventListener('input', () => { t = +scrub.value; playing = false; show(); });
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => requestAnimationFrame(tick));
+})();
+</script>
+</body>
+</html>

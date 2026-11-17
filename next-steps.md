@@ -14,6 +14,7 @@
 - [ ] Add the ad (AI class\Call Back Log Ad.html) to the GitHub repo?
 
 ## Housekeeping
+- [ ] After any ad fix, copy AI class\Call Back Log Ad.html to app/public/ad.html so the home page shows the new version
 - [ ] Update ad-script.md to the new 46.5-second version
 - [x] Push the Sunrise colors for the app to GitHub
 - [x] App is live: https://dannymarsh333-gif.github.io/call-back-log/ (updates automatically on every push)
