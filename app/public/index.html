@@ -90,7 +90,8 @@
     .play-tag { background: var(--hot); color: #fff; font: 400 1.2rem/1 var(--tab); letter-spacing: .05em; padding: 8px 12px; display: inline-flex; gap: 8px; align-items: center; }
     .watch h3 { margin: 0; font: 400 clamp(1.6rem, 3.6vw, 2.4rem)/1.05 var(--tab); letter-spacing: .01em; text-transform: uppercase; }
     .screen { border: 3px solid var(--ink); background: var(--ink); padding: 8px; }
-    .screen iframe { display: block; width: 100%; border: 0; height: calc(min(100vw - 54px, 1158px) * 0.5625 + 74px); background: #0e0e0d; }
+    .screen { max-width: 640px; margin-inline: auto; }
+    .screen video { display: block; width: 100%; height: auto; aspect-ratio: 1; background: #0e0e0d; }
     .credit { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .9rem; color: var(--ink-2); margin-top: 8px; font-style: italic; }
 
     /* stories in columns */
@@ -152,7 +153,6 @@
     @media (max-width: 560px) {
       .strip .meta .hide-sm, .strip .cta .long { display: none; }
       .strip .cta { padding: 10px 14px; }
-      .screen iframe { height: calc((100vw - 54px) * 0.5625 + 74px); }
       .breaking .tag { font-size: 1.05rem; padding: 10px; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -277,7 +277,10 @@
         <h3>The 46-second video every new rep needs to see</h3>
       </div>
       <div class="screen">
-        <iframe id="adFrame" src="ad.html" title="Call Back Log ad: a 46-second animated story" loading="lazy" allow="fullscreen"></iframe>
+        <video id="adVideo" controls muted playsinline preload="metadata" poster="media/call-back-log-ad-poster.jpg" aria-label="Call Back Log ad: a 46-second animated story">
+          <source src="media/call-back-log-ad.mp4" type="video/mp4">
+          Your browser can't play this video. <a href="media/call-back-log-ad.mp4">Download the ad (MP4)</a>.
+        </video>
       </div>
       <div class="credit"><span>A rep, a stack of notes, and a callback a week later.</span><span>Jane Doe and every name in the video are made up.</span></div>
     </section>
@@ -352,16 +355,14 @@
     try {
       document.getElementById('dateline').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     } catch (e) { /* keep "Fall Edition" */ }
-    // start the ad only once at least half of it is on screen
+    // start the ad (muted, so browsers allow it) once at least half of it is on screen; the controls turn the sound on
     (function () {
-      const f = document.getElementById('adFrame');
-      if (!f || !('IntersectionObserver' in window)) return;
-      let seen = false, ready = false;
-      const go = () => { if (seen && ready) { try { f.contentWindow.postMessage('cbl-play', '*'); } catch (e) {} } };
-      f.addEventListener('load', () => { ready = true; go(); });
+      const v = document.getElementById('adVideo');
+      if (!v || !('IntersectionObserver' in window)) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       new IntersectionObserver((list, obs) => {
-        if (list.some((x) => x.isIntersecting)) { seen = true; go(); obs.disconnect(); }
-      }, { threshold: 0.5 }).observe(f);
+        if (list.some((x) => x.isIntersecting)) { const p = v.play(); if (p && p.catch) p.catch(() => {}); obs.disconnect(); }
+      }, { threshold: 0.5 }).observe(v);
     })();
     // the leaf pile under the tree: the same pile every visit
     (function () {

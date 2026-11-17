@@ -143,16 +143,17 @@ body[data-view="home"] .notes .sticky { flex: 0 0 82%; scroll-snap-align: center
 body[data-view="home"] .season { display: block; width: min(300px, 78vw); margin: 0 auto; }
 
 /* wide screens: notes in a column on the left, tree fixed at the bottom right */
-@media (min-width: 1100px) {
-  .layout { display: grid; grid-template-columns: 270px minmax(0, 640px); gap: 30px; max-width: 980px; margin: 0 0 0 clamp(16px, 4vw, 64px); padding-top: 18px; }
+@media (min-width: 1000px) {
+  /* the tree takes the right side; the layout gives it room so it never covers anything */
+  :root { --tree-w: clamp(220px, 26vw, 420px); }
+  .layout { display: grid; grid-template-columns: clamp(220px, 20vw, 270px) minmax(0, 640px); gap: clamp(18px, 2vw, 30px); max-width: calc(100vw - var(--tree-w) - 24px); margin: 0 0 0 clamp(16px, 3vw, 64px); padding-top: 18px; }
   .notes, body[data-view="home"] .notes { display: flex; flex-direction: column; gap: 26px; overflow: visible; padding: 8px 0 24px; margin: 0;
     position: sticky; top: 70px; align-self: start; max-width: none; }
   body[data-view="home"] .notes .sticky { flex: none; }
   main { margin: 0; padding: 0 0 24px; max-width: none; }
-}
-@media (min-width: 1340px) {
-  .season, body[data-view="home"] .season { display: block; position: fixed; right: 12px; bottom: 0; z-index: 0; margin: 0;
-    width: clamp(240px, calc(100vw - 1090px), 420px); }
+  .season, body[data-view="home"] .season { display: block; position: fixed; right: 12px; bottom: 0; z-index: 0; margin: 0; width: var(--tree-w);
+    max-height: calc(100vh - 70px); }
+  .season svg { max-height: calc(100vh - 70px); width: auto; margin-left: auto; }
 }
 
 /* the tree's small motions */
@@ -166,4 +167,4 @@ body[data-view="home"] .season { display: block; width: min(300px, 78vw); margin
 @keyframes szsnow { 0% { translate: 0 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { translate: -20px 560px; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .owl-lids, .sz-fall, .sz-snow { animation: none; } .sz-fall, .sz-snow { display: none; } }
 /* phones and tablets: keep the swipe row short; the full list shows on wide screens */
-@media (max-width: 1099px) { .ask li:nth-child(n+3):not(.tip) { display: none; } }
+@media (max-width: 999px) { .ask li:nth-child(n+3):not(.tip) { display: none; } }
