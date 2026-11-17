@@ -101,3 +101,67 @@ textarea { min-height: 140px; resize: vertical; }
 .linkbtn { background: none; border: 0; padding: 4px; font: inherit; font-weight: 700; color: var(--brand-ink); text-decoration: underline; cursor: pointer; }
 .empty { text-align: center; padding: 28px 8px; color: var(--muted); }
 .error { background: var(--danger); color: #fff; padding: 12px; border-radius: 10px; }
+
+/* ---------- sticky notes + seasonal tree ---------- */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.layout { position: relative; z-index: 1; }
+.notes { display: none; }
+.season { display: none; pointer-events: none; }
+.season svg { display: block; width: 100%; height: auto; }
+
+.sticky { position: relative; padding: 20px 18px 16px; color: #1b2140; font-family: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
+  box-shadow: 0 12px 20px -12px rgba(27, 33, 64, .5); border-radius: 2px; }
+.sticky::before { content: ""; position: absolute; top: -11px; left: 50%; width: 84px; height: 22px; transform: translateX(-50%) rotate(-2deg);
+  background: rgba(255, 255, 255, .6); border: 1px solid rgba(27, 33, 64, .1); }
+.sticky h3 { margin: 0 0 6px; font: 700 1.65rem/1 "Caveat", "Segoe Print", cursive; }
+/* the agenda is a sheet of lined notebook paper */
+.n-agenda { background: #fffdf7 repeating-linear-gradient(transparent 0 31px, #b9d3ee 31px 32px); background-position: 0 14px;
+  border-left: 3px solid #f2a3a3; transform: rotate(-1.2deg); }
+.n-thought { background: #ffc8d8; transform: rotate(1.4deg); }
+.n-ask { background: #bfe3ff; transform: rotate(-.8deg); }
+.agenda, .ask { list-style: none; margin: 0; padding: 0; font-size: 1.32rem; line-height: 1.2; }
+.agenda li { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.agenda li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.agenda li.done span { text-decoration: line-through; opacity: .55; }
+.agenda li.none { opacity: .7; }
+.tick { flex: none; width: 24px; height: 24px; border: 2px solid #1b2140; border-radius: 4px; background: transparent; color: #0e6b55;
+  font: 800 16px/1 system-ui, sans-serif; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.del { flex: none; border: 0; background: none; color: #5b6180; font: 700 20px/1 system-ui, sans-serif; cursor: pointer; padding: 2px 6px; }
+.tick:focus-visible, .del:focus-visible, .agenda-add input:focus-visible, .agenda-add button:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
+.agenda-add { display: flex; gap: 6px; margin-top: 8px; }
+.agenda-add input { flex: 1; min-width: 0; border: 0; border-bottom: 2px dashed #9aa6c2; background: transparent; padding: 4px 2px;
+  font: 500 1.3rem/1.1 "Caveat", "Segoe Print", cursive; color: #1b2140; }
+.agenda-add button { border: 0; border-radius: 6px; background: #1b2140; color: #fff4ec; font: 700 .85rem/1 system-ui, sans-serif; padding: 6px 10px; cursor: pointer; }
+.thought { margin: 0; font-size: 1.75rem; line-height: 1.12; }
+.ask li { margin-bottom: 8px; }
+.ask li.tip { border-top: 2px dashed rgba(27, 33, 64, .25); padding-top: 8px; margin-bottom: 0; }
+
+/* phone and tablet: notes swipe across the top of Today, tree sits at the bottom */
+body[data-view="home"] .notes { display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 20px 16px 10px;
+  max-width: 640px; margin: 0 auto; -webkit-overflow-scrolling: touch; }
+body[data-view="home"] .notes .sticky { flex: 0 0 82%; scroll-snap-align: center; }
+body[data-view="home"] .season { display: block; width: min(300px, 78vw); margin: 0 auto; }
+
+/* wide screens: notes in a column on the left, tree fixed at the bottom right */
+@media (min-width: 1100px) {
+  .layout { display: grid; grid-template-columns: 270px minmax(0, 640px); gap: 30px; max-width: 980px; margin: 0 0 0 clamp(16px, 4vw, 64px); padding-top: 18px; }
+  .notes, body[data-view="home"] .notes { display: flex; flex-direction: column; gap: 26px; overflow: visible; padding: 8px 0 24px; margin: 0;
+    position: sticky; top: 70px; align-self: start; max-width: none; }
+  body[data-view="home"] .notes .sticky { flex: none; }
+  main { margin: 0; padding: 0 0 24px; max-width: none; }
+}
+@media (min-width: 1340px) {
+  .season, body[data-view="home"] .season { display: block; position: fixed; right: 12px; bottom: 0; z-index: 0; margin: 0;
+    width: clamp(240px, calc(100vw - 1090px), 420px); }
+}
+
+/* the tree's small motions */
+.owl-lids { transform-box: fill-box; transform-origin: center top; animation: owlblink 6s infinite; }
+@keyframes owlblink { 0%, 93%, 100% { transform: scaleY(0); } 95.5% { transform: scaleY(1); } }
+.sz-fall { transform-box: fill-box; animation: szfall 9s linear infinite; }
+.sz-fall.f2 { animation-duration: 12s; animation-delay: -5s; } .sz-fall.f3 { animation-duration: 10s; animation-delay: -8s; }
+@keyframes szfall { 0% { translate: 0 0; rotate: 0deg; opacity: 0; } 8% { opacity: 1; } 50% { translate: -40px 220px; rotate: 160deg; }
+  92% { opacity: 1; } 100% { translate: 10px 440px; rotate: 320deg; opacity: 0; } }
+.sz-snow { animation: szsnow 7s linear infinite; } .sz-snow.s1 { animation-duration: 9s; animation-delay: -3s; } .sz-snow.s2 { animation-duration: 11s; animation-delay: -6s; }
+@keyframes szsnow { 0% { translate: 0 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { translate: -20px 560px; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .owl-lids, .sz-fall, .sz-snow { animation: none; } .sz-fall, .sz-snow { display: none; } }

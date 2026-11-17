@@ -308,10 +308,111 @@
   }
 
   // ---------- routing ----------
+  // ---------- sticky notes: this week's agenda, today's thought, and who to ask about what ----------
+  const notesEl = document.getElementById("notes");
+  const THOUGHTS = [
+    "Every callback is a promise kept.",
+    "The fortune is in the follow-up.",
+    "Be the rep who remembers.",
+    "Small details build big trust.",
+    "Today's no can be next month's maybe.",
+    "Listen twice as much as you talk.",
+    "Every name on your list is a person, not a lead.",
+    "A great call starts before you dial.",
+    "Consistency beats charm.",
+    "One good question beats ten good answers.",
+    "Progress, not perfection. Make the next call.",
+    "Ask about them before you ask for anything.",
+  ];
+  const SEASON_TIP = {
+    fall: "Leaves down, cold coming: ask about winter tires and home heating.",
+    winter: "Cold snap: check on tires, roadside help, and frozen pipes.",
+    spring: "Storm season: ask about roof and flood coverage.",
+    summer: "Travel season: ask about road trips and coverage while they're away.",
+  };
+  const ASK = [
+    [/married|wedding|engaged/, "Send a card or flowers?"],
+    [/baby|pregnan/, "Ask how the family is doing."],
+    [/lost (his|her|their)? ?job|laid off|job/, "Ask how the job search is going."],
+    [/moved|moving|new city|new house|new home/, "Ask how they're settling in."],
+    [/college|school|semester/, "Ask how the semester is going."],
+    [/sick|surgery|hospital|injur/, "Ask how they're feeling."],
+    [/retire/, "Ask how retirement planning is going."],
+  ];
+  const season = (() => {
+    const q = new URLSearchParams(location.search).get("season");
+    return ["fall", "winter", "spring", "summer"].includes(q) ? q : SeasonArt.seasonFor(new Date());
+  })();
+  function ensureAgenda() {
+    if (Array.isArray(state.agenda)) return;
+    state.agenda = [
+      { id: uid(), text: "Call back everyone who's overdue", done: false },
+      { id: uid(), text: "Send Maria the 20-year term quote", done: false },
+      { id: uid(), text: "Prep bundle numbers for James", done: true },
+    ];
+  }
+  function askAbout() {
+    const t = today();
+    const due = state.contacts.filter((c) => !c.dnc && c.callbackDate && c.callbackDate <= t);
+    const lines = [];
+    due.forEach((c) => {
+      const issue = (c.issues || []).find((i) => !i.resolved);
+      if (!issue) return;
+      const hit = ASK.find(([re]) => re.test(issue.text.toLowerCase()));
+      const first = c.name.replace(/\s*\(sample\)/i, "").split(" ")[0];
+      lines.push(`<li><b>${esc(first)}:</b> ${esc(issue.text)}. ${esc(hit ? hit[1] : "Ask how it's going.")}</li>`);
+    });
+    lines.splice(4);
+    lines.push(`<li class="tip">${esc(SEASON_TIP[season])}</li>`);
+    return lines.join("");
+  }
+  function renderNotes() {
+    ensureAgenda();
+    const now = new Date();
+    const day = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+    const items = state.agenda.map((a) => `<li class="${a.done ? "done" : ""}">
+        <button class="tick" type="button" data-tick="${a.id}" aria-pressed="${a.done}" aria-label="${a.done ? "Mark not done" : "Mark done"}: ${esc(a.text)}">${a.done ? "&#10003;" : ""}</button>
+        <span>${esc(a.text)}</span>
+        <button class="del" type="button" data-del="${a.id}" aria-label="Remove: ${esc(a.text)}">&times;</button></li>`).join("");
+    notesEl.innerHTML = `
+      <section class="sticky n-agenda">
+        <h3>This week</h3>
+        <ul class="agenda">${items || `<li class="none">Nothing yet. Add your first to-do.</li>`}</ul>
+        <form id="agendaForm" class="agenda-add"><label for="agendaInput" class="sr">Add a to-do</label>
+          <input id="agendaInput" maxlength="80" placeholder="Add a to-do..." autocomplete="off"><button type="submit">Add</button></form>
+      </section>
+      <section class="sticky n-thought">
+        <h3>Today's thought</h3>
+        <p class="thought">${esc(THOUGHTS[day % THOUGHTS.length])}</p>
+      </section>
+      <section class="sticky n-ask">
+        <h3>Ask about</h3>
+        <ul class="ask">${askAbout()}</ul>
+      </section>`;
+    notesEl.querySelectorAll("[data-tick]").forEach((b) => b.addEventListener("click", async () => {
+      const a = state.agenda.find((x) => x.id === b.dataset.tick);
+      a.done = !a.done; await trySave(); renderNotes();
+    }));
+    notesEl.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", async () => {
+      state.agenda = state.agenda.filter((x) => x.id !== b.dataset.del); await trySave(); renderNotes();
+    }));
+    document.getElementById("agendaForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const input = document.getElementById("agendaInput"), text = input.value.trim();
+      if (!text) return;
+      state.agenda.push({ id: uid(), text, done: false }); await trySave(); renderNotes();
+      document.getElementById("agendaInput").focus();
+    });
+  }
+  document.getElementById("season").innerHTML = SeasonArt.svg(season);
+  document.getElementById("season").dataset.season = season;
+
   function route() {
     const h = location.hash || "#/";
     document.getElementById("nav-home").classList.toggle("active", h === "#/");
     document.getElementById("nav-all").classList.toggle("active", h === "#/all");
+    document.body.dataset.view = h === "#/" ? "home" : h === "#/all" ? "all" : "detail";
+    renderNotes();
     let m;
     if (h === "#/all") return viewAll();
     if (h === "#/add") return viewAdd();
