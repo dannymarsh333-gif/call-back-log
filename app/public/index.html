@@ -3,229 +3,358 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Call Back Log</title>
+  <title>The Call Back Log</title>
   <meta name="description" content="Welcome to Call Back Log: a phone-friendly call tracker for new insurance reps. Talk in your notes after each call and see who to call back today.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=UnifrakturMaguntia&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
   <style>
-    /* Sunrise, same palette as the app and the ad */
+    /* Front page: broadsheet type and rules, tabloid banners, autumn edition */
     :root {
-      --peach: #fff4ec; --peach-deep: #ffe3d2; --card: #ffffff;
-      --navy: #1b2140; --muted: #5b6180; --line: #f1dccd;
-      --coral: #ff6b4a; --coral-ink: #c43a22;
-      --mint: #2ec4a0; --mint-soft: #d5f5ec; --mint-ink: #0e6b55;
-      --sun: #ffc93c; --sun-soft: #ffe9a8; --sun-ink: #6b4e00;
-      --red: #c62f3b;
-      --sans: "Inter Tight", "Segoe UI", system-ui, -apple-system, sans-serif;
-      --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+      --paper: #faf6ee; --paper-2: #f2ebdd; --ink: #141210; --ink-2: #4a443d; --rule: #141210;
+      --cta: #ff6b4a; --cta-edge: #c43a22;           /* same orange as the app's Call button */
+      --flash: #ffe14d;                               /* tabloid yellow */
+      --hot: #e23d14;                                 /* banner red-orange */
+      --rust: #b5481f; --gold: #d99a1e; --leaf: #e2672d; --bark: #2a211b;
+      --mast: "UnifrakturMaguntia", "Old English Text MT", Georgia, serif;
+      --head: "Playfair Display", Georgia, "Times New Roman", serif;
+      --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+      --tab: "Anton", "Oswald", Impact, "Arial Narrow", sans-serif;
+      --label: "Oswald", "Arial Narrow", Arial, sans-serif;
     }
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { margin: 0; background: var(--peach); color: var(--navy); font: 18px/1.5 var(--sans); }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 18px/1.55 var(--body); }
     a { color: inherit; }
-    .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-    .serif { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+    .page { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    .label { font-family: var(--label); text-transform: uppercase; letter-spacing: .12em; font-size: .78rem; font-weight: 600; }
 
-    /* the orange "Start calling today" button, same coral as the app's Call button */
-    .cta { display: inline-flex; align-items: center; gap: 10px; background: var(--coral); color: var(--navy); font-weight: 800; text-decoration: none;
-           padding: 14px 22px; border-radius: 14px; box-shadow: 0 6px 0 var(--coral-ink); transition: transform .12s ease, box-shadow .12s ease; white-space: nowrap; }
-    .cta:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--coral-ink); }
-    .cta:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--coral-ink); }
-    .cta:focus-visible { outline: 3px solid var(--navy); outline-offset: 4px; }
-    .cta svg { flex: none; }
-    .cta.big { font-size: 1.25rem; padding: 18px 30px; }
+    /* orange button, unchanged from the app */
+    .cta { display: inline-flex; align-items: center; gap: 10px; background: var(--cta); color: var(--ink); font: 600 1rem/1 var(--label); text-transform: uppercase; letter-spacing: .06em;
+           text-decoration: none; padding: 13px 20px; border-radius: 4px; box-shadow: 0 5px 0 var(--cta-edge); white-space: nowrap; transition: transform .12s, box-shadow .12s; }
+    .cta:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--cta-edge); }
+    .cta:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--cta-edge); }
+    .cta:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+    .cta.big { font-size: 1.2rem; padding: 18px 28px; }
 
-    /* top bar */
-    .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: color-mix(in srgb, var(--peach) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 2px solid var(--line); }
-    .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
-    .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem; text-decoration: none; letter-spacing: -0.02em; }
-    .logo i { width: 34px; height: 34px; border-radius: 10px; background: var(--navy); display: grid; place-items: center; flex: none; }
+    /* top strip */
+    .strip { border-bottom: 1px solid var(--rule); background: var(--paper); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; }
+    .strip .page { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 10px; }
+    .strip .meta { display: flex; gap: 18px; flex-wrap: wrap; color: var(--ink-2); }
 
-    /* hero */
-    .hero { padding-block: 64px 32px; }
-    .hero h1 { margin: 0; font-size: clamp(2.6rem, 7.5vw, 5.6rem); line-height: .98; letter-spacing: -0.045em; font-weight: 800; text-wrap: balance; }
-    .hero h1 .serif { color: var(--coral-ink); display: block; font-size: 1.04em; }
-    .hero p { max-width: 620px; font-size: 1.2rem; color: var(--muted); margin: 22px 0 28px; }
-    .hero .row { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; }
-    .pill { display: inline-flex; gap: 8px; align-items: center; font-weight: 700; font-size: .95rem; color: var(--mint-ink); background: var(--mint-soft); padding: 8px 14px; border-radius: 999px; }
+    /* masthead */
+    .mast { text-align: center; padding-block: 26px 10px; border-bottom: 4px double var(--rule); }
+    .mast h1 { margin: 0; font-family: var(--mast); font-weight: 400; font-size: clamp(2.8rem, 9vw, 6.4rem); line-height: 1; letter-spacing: .01em; }
+    .mast .motto { margin: 10px 0 0; font-style: italic; color: var(--ink-2); }
+    .sections { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 22px; padding-block: 10px; border-bottom: 1px solid var(--rule); }
+    .sections a { text-decoration: none; }
+    .sections a:hover { text-decoration: underline; }
 
-    /* the ad, framed like a screen */
-    .reel { margin-block: 24px 72px; }
-    .reel-frame { background: var(--navy); border-radius: 26px; padding: 12px; box-shadow: 0 30px 60px -20px rgba(27, 33, 64, .45); }
-    .reel iframe { display: block; width: 100%; border: 0; border-radius: 16px; height: calc(min(100vw - 56px, 1096px) * 0.5625 + 74px); background: #0e0e0d; }
-    .reel-cap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: .95rem; margin-top: 14px; }
+    /* tabloid banner */
+    .breaking { background: var(--ink); color: #fff; overflow: hidden; border-bottom: 4px solid var(--flash); }
+    .breaking .page { display: flex; align-items: stretch; gap: 0; }
+    .breaking .tag { background: var(--hot); color: #fff; font: 400 1.35rem/1 var(--tab); letter-spacing: .04em; padding: 12px 16px; flex: none; display: flex; align-items: center; }
+    .ticker { overflow: hidden; flex: 1; display: flex; align-items: center; min-width: 0; }
+    .ticker .run { display: inline-flex; white-space: nowrap; animation: tick 40s linear infinite; }
+    .ticker .run span { font: 400 1.25rem/1 var(--tab); letter-spacing: .03em; padding: 0 14px; }
+    .ticker b { color: var(--flash); font-weight: 400; }
+    @keyframes tick { to { transform: translateX(-50%); } }
 
-    /* section titles */
-    .eyeline { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
-    h2 { margin: 0; font-size: clamp(2rem, 4.6vw, 3.2rem); line-height: 1.02; letter-spacing: -0.04em; text-wrap: balance; }
-    h2 .serif { color: var(--coral-ink); }
+    /* lead story with the tree */
+    .lead { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 36px; padding-block: 34px 30px; border-bottom: 1px solid var(--rule); align-items: end; }
+    .kicker { display: inline-block; background: var(--flash); color: var(--ink); font: 400 1.1rem/1 var(--tab); letter-spacing: .05em; padding: 7px 10px; transform: rotate(-1.5deg); }
+    .lead h2 { font-family: var(--head); font-weight: 900; font-size: clamp(2.6rem, 6.4vw, 5.2rem); line-height: .98; letter-spacing: -0.02em; margin: 16px 0 14px; text-wrap: balance; }
+    .lead h2 em { font-style: italic; font-weight: 700; color: var(--rust); }
+    .deck { font-size: 1.28rem; line-height: 1.45; margin: 0 0 14px; max-width: 34ch; }
+    .byline { color: var(--ink-2); margin: 0 0 24px; }
+    .lead .row { display: flex; gap: 14px 20px; flex-wrap: wrap; align-items: center; }
+    .stamp { font-family: var(--label); text-transform: uppercase; letter-spacing: .1em; font-size: .85rem; border: 2px solid var(--ink); padding: 6px 10px; transform: rotate(2deg); }
+    figure.tree { margin: 0; }
+    figure.tree svg { display: block; width: 100%; height: auto; max-height: 640px; }
+    figure.tree figcaption { border-top: 1px solid var(--rule); padding-top: 8px; font-size: .9rem; color: var(--ink-2); font-style: italic; }
+    .owl-lids { transform-box: fill-box; transform-origin: center top; animation: blink 6s infinite; }
+    @keyframes blink { 0%, 93%, 100% { transform: scaleY(0); } 95.5% { transform: scaleY(1); } }
+    .falling { animation: fall 9s linear infinite; transform-box: fill-box; }
+    .falling.f2 { animation-duration: 12s; animation-delay: -5s; }
+    .falling.f3 { animation-duration: 10s; animation-delay: -8s; }
+    @keyframes fall {
+      0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+      8% { opacity: 1; }
+      50% { transform: translate(-40px, 220px) rotate(160deg); }
+      92% { opacity: 1; }
+      100% { transform: translate(10px, 440px) rotate(320deg); opacity: 0; }
+    }
 
-    /* "what it does": tiles that each look different on purpose */
-    .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-bottom: 84px; }
-    .tile { border-radius: 26px; padding: 28px; position: relative; overflow: hidden; min-width: 0; }
-    .tile h3 { margin: 0 0 8px; font-size: 1.5rem; letter-spacing: -0.03em; line-height: 1.1; }
-    .tile p { margin: 0; }
-    .t-problem { grid-column: span 3; background: var(--navy); color: var(--peach); }
-    .t-problem blockquote { margin: 0 0 18px; font-family: var(--serif); font-style: italic; font-size: clamp(1.9rem, 3.6vw, 2.7rem); line-height: 1.08; }
-    .t-problem p { color: color-mix(in srgb, var(--peach) 78%, var(--navy)); }
-    .t-talk { grid-column: span 3; background: var(--mint-soft); color: var(--navy); }
-    .t-talk .q { margin-top: 18px; display: grid; gap: 10px; }
-    .t-talk .q span { background: var(--card); border-radius: 14px; padding: 12px 16px; font-weight: 700; display: flex; justify-content: space-between; gap: 10px; box-shadow: 0 2px 0 color-mix(in srgb, var(--mint) 40%, transparent); }
-    .t-talk .q b { color: var(--mint-ink); font-weight: 800; }
-    .t-today { grid-column: span 2; background: var(--card); border: 3px solid var(--navy); }
-    .stack { display: grid; gap: 10px; margin-top: 18px; }
-    .row-card { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; font-weight: 700; font-size: .95rem; }
-    .row-card.y { border-left: 7px solid var(--sun); } .row-card.r { border-left: 7px solid var(--red); }
-    .badge { font-size: .78rem; font-weight: 800; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
-    .b-mint { background: var(--mint-soft); color: var(--mint-ink); } .b-sun { background: var(--sun-soft); color: var(--sun-ink); } .b-red { background: var(--red); color: #fff; }
-    .t-note { grid-column: span 2; background: transparent; display: grid; place-items: center; padding: 18px; }
-    .sticky { background: var(--sun); color: var(--navy); width: 100%; max-width: 330px; padding: 30px 26px 34px; transform: rotate(-3deg); box-shadow: 0 18px 30px -12px rgba(27, 33, 64, .35); border-radius: 4px; position: relative; }
-    .sticky::before { content: ""; position: absolute; left: 50%; top: -14px; width: 96px; height: 28px; transform: translateX(-50%) rotate(2deg); background: color-mix(in srgb, var(--peach) 70%, transparent); border: 1px solid color-mix(in srgb, var(--navy) 10%, transparent); }
-    .sticky small { display: block; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; font-size: .78rem; margin-bottom: 10px; }
-    .sticky strong { display: block; font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 2.1rem; line-height: 1.05; margin-bottom: 12px; }
-    .t-date { grid-column: span 2; background: var(--coral); color: var(--navy); }
-    .speech { margin-top: 18px; background: var(--card); border-radius: 22px 22px 22px 6px; padding: 14px 18px; font-family: var(--serif); font-style: italic; font-size: 1.9rem; line-height: 1.1; }
-    .confirm { margin-top: 12px; background: var(--mint-soft); color: var(--mint-ink); font-weight: 800; border-radius: 12px; padding: 10px 14px; font-size: .95rem; }
+    /* the video */
+    .watch { padding-block: 30px; border-bottom: 1px solid var(--rule); }
+    .watch-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+    .play-tag { background: var(--hot); color: #fff; font: 400 1.2rem/1 var(--tab); letter-spacing: .05em; padding: 8px 12px; display: inline-flex; gap: 8px; align-items: center; }
+    .watch h3 { margin: 0; font: 400 clamp(1.6rem, 3.6vw, 2.4rem)/1.05 var(--tab); letter-spacing: .01em; text-transform: uppercase; }
+    .screen { border: 3px solid var(--ink); background: var(--ink); padding: 8px; }
+    .screen iframe { display: block; width: 100%; border: 0; height: calc(min(100vw - 54px, 1158px) * 0.5625 + 74px); background: #0e0e0d; }
+    .credit { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .9rem; color: var(--ink-2); margin-top: 8px; font-style: italic; }
 
-    /* three steps */
-    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 84px; counter-reset: step; }
-    .step { border-top: 4px solid var(--navy); padding-top: 18px; }
-    .step::before { counter-increment: step; content: counter(step); display: block; font-family: var(--serif); font-style: italic; font-size: 4.2rem; line-height: .9; color: var(--coral-ink); margin-bottom: 8px; }
-    .step h3 { margin: 0 0 6px; font-size: 1.35rem; letter-spacing: -0.02em; }
-    .step p { margin: 0; color: var(--muted); }
+    /* stories in columns */
+    .stories { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-block: 30px; border-bottom: 4px double var(--rule); }
+    .story { padding: 0 22px; border-left: 1px solid var(--rule); min-width: 0; }
+    .story:first-child { padding-left: 0; border-left: 0; }
+    .story:last-child { padding-right: 0; }
+    .story h4 { font: 400 clamp(1.5rem, 2.6vw, 2rem)/1.02 var(--tab); text-transform: uppercase; margin: 8px 0 10px; letter-spacing: .01em; }
+    .story h4 mark { background: var(--flash); color: var(--ink); padding: 0 4px; }
+    .story p { margin: 0 0 12px; }
+    .dropcap::first-letter { font-family: var(--head); font-weight: 900; float: left; font-size: 3.6em; line-height: .82; padding: 6px 8px 0 0; }
+    .qa { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid var(--rule); }
+    .qa li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dotted var(--ink-2); font-size: .95rem; }
+    .qa li b { font-family: var(--head); font-style: italic; color: var(--rust); }
+    .cards { display: grid; gap: 8px; margin-top: 14px; }
+    .card { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--ink); padding: 8px 10px; font-family: var(--label); font-size: .92rem; letter-spacing: .03em; }
+    .card.y { border-left: 8px solid #ffc93c; } .card.r { border-left: 8px solid #c62f3b; }
+    .badge { font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; white-space: nowrap; }
+    .b-ok { background: #d5f5ec; color: #0e6b55; } .b-y { background: #ffe9a8; color: #6b4e00; } .b-r { background: #c62f3b; color: #fff; }
 
-    /* honest note about data */
-    .note { display: flex; gap: 16px; align-items: flex-start; background: var(--card); border: 2px dashed var(--line); border-radius: 20px; padding: 20px 22px; margin-bottom: 84px; color: var(--muted); }
-    .note b { color: var(--navy); }
+    /* pull quote + sticky */
+    .feature { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 36px; padding-block: 34px; border-bottom: 1px solid var(--rule); align-items: center; }
+    .pull { margin: 0; font-family: var(--head); font-style: italic; font-weight: 700; font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.1; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--ink); padding-block: 18px; }
+    .pull cite { display: block; margin-top: 12px; font: 600 .82rem/1 var(--label); letter-spacing: .12em; text-transform: uppercase; font-style: normal; color: var(--ink-2); }
+    .sticky { background: var(--flash); padding: 26px 24px 30px; transform: rotate(2.5deg); box-shadow: 0 16px 26px -12px rgba(20, 18, 16, .45); max-width: 360px; justify-self: center; position: relative; }
+    .sticky::before { content: ""; position: absolute; top: -12px; left: 50%; width: 92px; height: 26px; transform: translateX(-50%) rotate(-3deg); background: rgba(255, 255, 255, .55); border: 1px solid rgba(20, 18, 16, .12); }
+    .sticky .label { display: block; margin-bottom: 8px; }
+    .sticky strong { display: block; font-family: var(--head); font-style: italic; font-size: 2rem; line-height: 1.05; margin-bottom: 8px; }
 
-    /* bottom call to action */
-    .finale { background: var(--navy); color: var(--peach); padding-block: 72px; }
-    .finale .wrap { display: grid; gap: 26px; justify-items: start; }
-    .finale h2 .serif { color: var(--coral); }
-    .finale p { margin: 0; max-width: 560px; color: color-mix(in srgb, var(--peach) 78%, var(--navy)); font-size: 1.15rem; }
-    footer { background: var(--navy); color: color-mix(in srgb, var(--peach) 60%, var(--navy)); font-size: .9rem; padding-block: 0 32px; }
-    footer .wrap { border-top: 1px solid color-mix(in srgb, var(--peach) 18%, transparent); padding-top: 18px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    /* the briefing (how it works) */
+    .briefing { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 30px; padding-block: 34px; border-bottom: 1px solid var(--rule); }
+    .briefing h3 { margin: 0; font: 400 2.4rem/1 var(--tab); text-transform: uppercase; }
+    .briefing ol { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 16px; }
+    .briefing li { counter-increment: s; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; align-items: baseline; border-bottom: 1px dotted var(--ink-2); padding-bottom: 14px; }
+    .briefing li::before { content: counter(s); font-family: var(--head); font-weight: 900; font-size: 3rem; line-height: .9; color: var(--rust); }
+    .briefing b { font-family: var(--head); font-size: 1.25rem; }
 
-    @media (max-width: 860px) {
-      .bento { grid-template-columns: 1fr 1fr; }
-      .t-problem, .t-talk { grid-column: span 2; }
-      .t-today, .t-note, .t-date { grid-column: span 1; }
-      .t-date { grid-column: span 2; }
-      .steps { grid-template-columns: 1fr; }
+    /* corrections box (privacy) */
+    .corrections { margin-block: 30px; border: 1px solid var(--ink); padding: 16px 20px; background: var(--paper-2); }
+    .corrections p { margin: 6px 0 0; }
+
+    /* back page */
+    .back { background: var(--ink); color: #fff; padding-block: 56px; border-top: 6px solid var(--flash); }
+    .back .page { display: grid; gap: 22px; justify-items: start; }
+    .back h3 { margin: 0; font: 400 clamp(2.4rem, 6vw, 4.6rem)/1 var(--tab); text-transform: uppercase; letter-spacing: .01em; }
+    .back h3 mark { background: var(--flash); color: var(--ink); padding: 0 8px; }
+    .back p { margin: 0; color: #d9d3c7; max-width: 52ch; }
+    footer { background: var(--ink); color: #a59f93; font-size: .88rem; padding-block: 0 28px; }
+    footer .page { border-top: 1px solid #3a352f; padding-top: 16px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+    @media (max-width: 900px) {
+      .lead, .feature { grid-template-columns: 1fr; }
+      figure.tree { max-width: 460px; justify-self: center; width: 100%; }
+      .stories { grid-template-columns: 1fr; gap: 26px; }
+      .story { padding: 0; border-left: 0; border-top: 1px solid var(--rule); padding-top: 18px; }
+      .story:first-child { border-top: 0; padding-top: 0; }
+      .briefing { grid-template-columns: 1fr; }
     }
     @media (max-width: 560px) {
-      .bento { grid-template-columns: 1fr; }
-      .bento > * { grid-column: span 1 !important; }
-      .top .cta { padding: 10px 14px; font-size: .95rem; }
-      .top .cta .long { display: none; }
-      .reel iframe { height: calc((100vw - 56px) * 0.5625 + 74px); }
+      .strip .meta .hide-sm, .strip .cta .long { display: none; }
+      .strip .cta { padding: 10px 14px; }
+      .screen iframe { height: calc((100vw - 54px) * 0.5625 + 74px); }
+      .breaking .tag { font-size: 1.05rem; padding: 10px; }
     }
-    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .cta { transition: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .ticker .run { animation: none; white-space: normal; } .ticker .run span[aria-hidden] { display: none; }
+      .owl-lids, .falling { animation: none; }
+      .falling { display: none; }
+      .cta { transition: none; }
+    }
   </style>
 </head>
 <body>
-  <header class="top">
-    <div class="wrap">
-      <a class="logo" href="#top">
-        <i aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M6.6 10.8a15.2 15.2 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" fill="#ff6b4a"/></svg></i>
-        Call Back Log
-      </a>
-      <a class="cta" href="app.html"><span>Start calling<span class="long"> today</span></span>
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+  <div class="strip">
+    <div class="page">
+      <div class="meta label"><span id="dateline">Fall Edition</span><span class="hide-sm">Autumn Edition</span><span class="hide-sm">Leaves: mostly down</span></div>
+      <a class="cta" href="app.html">Start calling<span class="long">&nbsp;today</span> &rarr;</a>
     </div>
+  </div>
+
+  <header class="page">
+    <div class="mast">
+      <h1>The Call Back Log</h1>
+      <p class="motto">Every call. Every callback. Every detail worth remembering.</p>
+    </div>
+    <nav class="sections label" aria-label="Sections">
+      <a href="#watch">Watch</a><a href="#talk">Talk it in</a><a href="#overdue">Overdue</a><a href="#before">Before you dial</a><a href="#briefing">The briefing</a><a href="#notes">Notes</a>
+    </nav>
   </header>
 
-  <main id="top">
-    <section class="hero wrap">
-      <h1>Welcome to Call Back Log. <span class="serif">Remember every call.</span></h1>
-      <p>A phone-friendly call tracker for new insurance reps. After each call, talk in what happened. Next time, everything you need is on one screen before you dial.</p>
-      <div class="row">
-        <a class="cta big" href="app.html">Start calling today
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        <span class="pill">Free · works on your phone · no sign-up</span>
+  <div class="breaking" role="note" aria-label="Breaking news">
+    <div class="page">
+      <div class="tag">BREAKING</div>
+      <div class="ticker"><div class="run"><span>REP FORGETS ENTIRE HOUR-LONG CALL &nbsp;·&nbsp; SOURCES SAY IT WAS <b>"FANTASTIC"</b> &nbsp;·&nbsp; COWORKER DROPS STACK OF NOTES, SAYS <b>"ORGANIZE THIS"</b> &nbsp;·&nbsp; LOCAL OWL HAS NEVER MISSED A CALLBACK &nbsp;·</span><span aria-hidden="true">REP FORGETS ENTIRE HOUR-LONG CALL &nbsp;·&nbsp; SOURCES SAY IT WAS <b>"FANTASTIC"</b> &nbsp;·&nbsp; COWORKER DROPS STACK OF NOTES, SAYS <b>"ORGANIZE THIS"</b> &nbsp;·&nbsp; LOCAL OWL HAS NEVER MISSED A CALLBACK &nbsp;·</span></div></div>
+    </div>
+  </div>
+
+  <main class="page">
+    <section class="lead">
+      <div>
+        <span class="kicker">EXCLUSIVE</span>
+        <h2>Welcome to Call Back Log. <em>Remember every call.</em></h2>
+        <p class="deck">A phone-friendly call tracker for new insurance reps. Talk in what happened after each call, and walk into the next one already knowing what matters.</p>
+        <p class="byline label">By the Call Back Log desk · Free · Works on your phone · No sign-up</p>
+        <div class="row">
+          <a class="cta big" href="app.html">Start calling today &rarr;</a>
+          <span class="stamp">Try it with sample contacts</span>
+        </div>
       </div>
+
+      <figure class="tree">
+        <svg viewBox="0 0 420 640" role="img" aria-labelledby="treeTitle">
+          <title id="treeTitle">A nearly bare autumn tree with an owl perched on a branch and a pile of fallen leaves</title>
+          <!-- ground and leaf pile -->
+          <path d="M0 600 Q210 585 420 600 V640 H0 Z" fill="#e8dcc6"/>
+          <g id="pile"></g>
+          <!-- trunk -->
+          <path d="M176 610 C186 540 190 470 192 410 C193 380 196 350 202 320 L222 320 C226 352 230 400 236 460 C242 530 252 580 270 610 Z" fill="#2a211b"/>
+          <path d="M200 600 C204 520 206 450 207 380" stroke="#4a3a2e" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <!-- branches -->
+          <g fill="none" stroke="#2a211b" stroke-linecap="round">
+            <path d="M204 340 C170 290 130 250 70 210" stroke-width="16"/>
+            <path d="M120 248 C100 220 92 190 96 150" stroke-width="8"/>
+            <path d="M84 222 C60 222 40 210 22 192" stroke-width="6"/>
+            <path d="M210 330 C206 260 210 190 224 110" stroke-width="15"/>
+            <path d="M214 230 C186 190 170 150 168 100" stroke-width="8"/>
+            <path d="M220 160 C240 120 262 90 288 70" stroke-width="7"/>
+            <path d="M218 360 C262 330 310 300 400 282" stroke-width="15"/>
+            <path d="M330 296 C350 260 360 226 362 190" stroke-width="7"/>
+            <path d="M282 316 C300 340 330 352 366 352" stroke-width="6"/>
+            <path d="M96 150 L86 128 M96 170 L118 150 M168 100 L156 80 M168 120 L186 98 M224 110 L214 84 M288 70 L304 56 M362 190 L376 170 M362 210 L346 192 M22 192 L10 196 M366 352 L384 360" stroke-width="3"/>
+          </g>
+          <!-- the last few leaves holding on -->
+          <g>
+            <path d="M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z" transform="translate(84 126) rotate(-30)" fill="#e2672d"/>
+            <path d="M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z" transform="translate(180 96) rotate(40)" fill="#d99a1e"/>
+            <path d="M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z" transform="translate(302 54) rotate(-10)" fill="#b5481f"/>
+            <path d="M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z" transform="translate(344 190) rotate(70)" fill="#e2672d"/>
+            <path d="M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z" transform="translate(382 362) rotate(20)" fill="#d99a1e"/>
+          </g>
+          <!-- falling leaves -->
+          <path class="falling" d="M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z" transform="translate(110 160)" fill="#e2672d"/>
+          <path class="falling f2" d="M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z" transform="translate(300 120)" fill="#d99a1e"/>
+          <path class="falling f3" d="M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z" transform="translate(240 80)" fill="#b5481f"/>
+          <!-- the owl, perched on the right branch -->
+          <g transform="translate(300 230)">
+            <path d="M-30 6 C-36 -30 -22 -58 0 -60 C22 -58 36 -30 30 6 C26 30 14 44 0 46 C-14 44 -26 30 -30 6 Z" fill="#6e4f33"/>
+            <path d="M-34 -10 C-40 14 -32 34 -18 42 C-26 24 -28 4 -24 -12 Z" fill="#4f3824"/>
+            <path d="M34 -10 C40 14 32 34 18 42 C26 24 28 4 24 -12 Z" fill="#4f3824"/>
+            <path d="M-17 -6 C-18 18 -10 36 0 38 C10 36 18 18 17 -6 C10 -12 -10 -12 -17 -6 Z" fill="#d9bd92"/>
+            <path d="M-8 6 l3 4 3 -4 M2 6 l3 4 3 -4 M-6 18 l3 4 3 -4 M4 18 l3 4 3 -4 M-2 28 l3 4 3 -4" stroke="#8a6a46" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M-26 -50 L-30 -70 L-14 -56 Z M26 -50 L30 -70 L14 -56 Z" fill="#4f3824"/>
+            <circle cx="-12" cy="-38" r="14" fill="#f3e6cc"/>
+            <circle cx="12" cy="-38" r="14" fill="#f3e6cc"/>
+            <circle cx="-12" cy="-38" r="8.5" fill="#ffc93c"/>
+            <circle cx="12" cy="-38" r="8.5" fill="#ffc93c"/>
+            <circle cx="-11" cy="-37" r="5" fill="#141210"/>
+            <circle cx="13" cy="-37" r="5" fill="#141210"/>
+            <circle cx="-9" cy="-39.5" r="1.6" fill="#fff"/>
+            <circle cx="15" cy="-39.5" r="1.6" fill="#fff"/>
+            <g class="owl-lids" fill="#6e4f33"><circle cx="-12" cy="-38" r="14.5"/><circle cx="12" cy="-38" r="14.5"/></g>
+            <path d="M-4 -28 L4 -28 L0 -18 Z" fill="#e2a21e"/>
+            <path d="M-12 44 l-4 8 M-8 45 l0 9 M-4 44 l4 8 M6 44 l-4 8 M10 45 l0 9 M14 44 l4 8" stroke="#e2a21e" stroke-width="3" stroke-linecap="round"/>
+          </g>
+        </svg>
+        <figcaption>On the scene: a local owl, unbothered, has reportedly never missed a callback.</figcaption>
+      </figure>
     </section>
 
-    <section class="reel wrap" aria-label="Call Back Log ad">
-      <div class="reel-frame">
+    <section class="watch" id="watch">
+      <div class="watch-head">
+        <span class="play-tag">&#9654; WATCH</span>
+        <h3>The 46-second video every new rep needs to see</h3>
+      </div>
+      <div class="screen">
         <iframe src="ad.html" title="Call Back Log ad: a 46-second animated story" loading="lazy" allow="fullscreen"></iframe>
       </div>
-      <div class="reel-cap"><span>The 46-second story of a rep, a stack of notes, and Jane Doe.</span><span>Jane Doe and every name in it are made up.</span></div>
+      <div class="credit"><span>A rep, a stack of notes, and a callback a week later.</span><span>Jane Doe and every name in the video are made up.</span></div>
     </section>
 
-    <section class="wrap" aria-labelledby="does">
-      <div class="eyeline"><h2 id="does">What it <span class="serif">actually</span> does</h2></div>
-      <div class="bento">
-        <article class="tile t-problem">
-          <blockquote>"Ok, great, have a great day!" …wait, what did we just talk about?</blockquote>
-          <p>Back-to-back calls blur together. Call Back Log is built for the moment right after you hang up.</p>
-        </article>
+    <section class="stories" aria-label="What it does">
+      <article class="story" id="talk">
+        <span class="label">Hands-free</span>
+        <h4><mark>Talk it in.</mark> No typing on a tiny screen.</h4>
+        <p class="dropcap">After you hang up, the app asks one quick question at a time. Tap the box and use your phone's keyboard microphone to answer.</p>
+        <ul class="qa">
+          <li>Topics covered? <b>term vs. whole life</b></li>
+          <li>Companies discussed? <b>Acme Mutual</b></li>
+          <li>Next step? <b>send a quote</b></li>
+        </ul>
+      </article>
+      <article class="story" id="overdue">
+        <span class="label">Today's callbacks</span>
+        <h4>Missed one? It turns <mark>yellow</mark>, then red.</h4>
+        <p>Your home screen lists who to call today. Anyone you missed rolls over to tomorrow with a label, so nobody slips away.</p>
+        <div class="cards" aria-label="Example callback list">
+          <div class="card"><span>Jane Doe</span><span class="badge b-ok">Due today</span></div>
+          <div class="card y"><span>Mark Rivera</span><span class="badge b-y">1 day overdue</span></div>
+          <div class="card r"><span>Priya Shah</span><span class="badge b-r">2 days overdue</span></div>
+        </div>
+      </article>
+      <article class="story">
+        <span class="label">Plain English</span>
+        <h4>Just say the date.</h4>
+        <p>Type or say it the way you'd say it out loud, like <i>"Thursday at 2"</i> or <i>"in 3 days"</i>. The app shows the date it understood and asks you to confirm before it saves.</p>
+        <p><span class="badge b-ok">Callback: Thursday at 2:00 PM. Is that right?</span></p>
+      </article>
+    </section>
 
-        <article class="tile t-talk">
-          <h3>Talk it in, one question at a time</h3>
-          <p>Tap a box and use your phone's keyboard microphone. No typing on a tiny screen.</p>
-          <div class="q">
-            <span>Topics covered? <b>term vs. whole life</b></span>
-            <span>Companies discussed? <b>Acme Mutual</b></span>
-            <span>Next step? <b>send a quote</b></span>
-          </div>
-        </article>
-
-        <article class="tile t-today">
-          <h3>Today's callbacks</h3>
-          <p>Missed one? It rolls over and turns yellow, then red.</p>
-          <div class="stack" aria-label="Example callback list">
-            <div class="row-card"><span>Jane Doe</span><span class="badge b-mint">Due today</span></div>
-            <div class="row-card y"><span>Mark Rivera</span><span class="badge b-sun">1 day overdue</span></div>
-            <div class="row-card r"><span>Priya Shah</span><span class="badge b-red">2 days overdue</span></div>
-          </div>
-        </article>
-
-        <article class="tile t-note">
-          <div class="sticky">
-            <small>Before you dial</small>
-            <strong>Open: Baby due in March</strong>
-            Every contact keeps a timeline of calls and the life details worth asking about.
-          </div>
-        </article>
-
-        <article class="tile t-date">
-          <h3>Just say the date</h3>
-          <p>Say it the way you'd say it out loud.</p>
-          <div class="speech">"Thursday at 2"</div>
-          <div class="confirm">Callback: Thursday at 2:00 PM. Is that right?</div>
-        </article>
+    <section class="feature" id="before">
+      <blockquote class="pull">"Jane! How's the baby prep going?"
+        <cite>The opening line you can only use if you remembered</cite></blockquote>
+      <div class="sticky">
+        <span class="label">Before you dial</span>
+        <strong>Open: Baby due in March</strong>
+        Every contact keeps a timeline of calls and the life details worth asking about, right on the card.
       </div>
     </section>
 
-    <section class="wrap" aria-labelledby="how">
-      <div class="eyeline"><h2 id="how">Three steps, <span class="serif">every call</span></h2></div>
-      <div class="steps">
-        <div class="step"><h3>Call</h3><p>Open a contact and tap the number. On your phone it opens the dialer.</p></div>
-        <div class="step"><h3>Talk it in</h3><p>Hang up, tap "Finish call", and answer the quick questions out loud.</p></div>
-        <div class="step"><h3>Call back ready</h3><p>They show up on the right day with their open issues on top.</p></div>
-      </div>
+    <section class="briefing" id="briefing">
+      <h3>The briefing</h3>
+      <ol>
+        <li><span><b>Call.</b> Open a contact and tap the number. On your phone it opens the dialer.</span></li>
+        <li><span><b>Talk it in.</b> Hang up, tap "Finish call", and answer the quick questions out loud.</span></li>
+        <li><span><b>Call back ready.</b> They show up on the right day, with their open issues on top.</span></li>
+      </ol>
     </section>
 
-    <section class="wrap">
-      <div class="note">
-        <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;margin-top:2px"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z" fill="none" stroke="#1b2140" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="#0e6b55" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <p><b>Your notes stay on your device.</b> This version saves everything in your own browser, and it starts with fake sample contacts so you can try it right away. Please don't enter real client information.</p>
-      </div>
-    </section>
+    <aside class="corrections" id="notes">
+      <span class="label">Notes &amp; corrections</span>
+      <p>This version saves everything in your own browser, and it starts with fake sample contacts so you can try it right away. Please don't enter real client information.</p>
+    </aside>
   </main>
 
-  <section class="finale" aria-labelledby="go">
-    <div class="wrap">
-      <h2 id="go">Your next call is waiting. <span class="serif">Be ready for it.</span></h2>
+  <section class="back" aria-labelledby="last">
+    <div class="page">
+      <h3 id="last">Your next call is <mark>waiting.</mark></h3>
       <p>Open the app, try the sample contacts, and log your first call in under a minute.</p>
-      <a class="cta big" href="app.html">Start calling today
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a class="cta big" href="app.html">Start calling today &rarr;</a>
     </div>
   </section>
   <footer>
-    <div class="wrap"><span>Call Back Log · built for an AI course final project</span><a href="app.html">Open the app</a></div>
+    <div class="page"><span>The Call Back Log · built for an AI course final project</span><a href="app.html">Open the app</a></div>
   </footer>
+
+  <script>
+    // today's date in the dateline
+    try {
+      document.getElementById('dateline').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    } catch (e) { /* keep "Fall Edition" */ }
+    // the leaf pile under the tree: the same pile every visit
+    (function () {
+      let seed = 7;
+      const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      const colors = ['#e2672d', '#d99a1e', '#b5481f', '#8c4a22', '#e8a33a'];
+      const leaf = 'M0 0 C6 -10 16 -10 20 0 C16 10 6 10 0 0 Z';
+      let out = '';
+      for (let i = 0; i < 70; i++) {
+        const x = 60 + r() * 330, spread = 1 - Math.abs(x - 225) / 200;
+        const y = 604 - r() * 26 * Math.max(0.2, spread);
+        out += '<path d="' + leaf + '" transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + Math.round(r() * 360) + ') scale(' + (0.7 + r() * 0.5).toFixed(2) + ')" fill="' + colors[i % colors.length] + '"/>';
+      }
+      document.getElementById('pile').innerHTML = out;
+    })();
+  </script>
 </body>
 </html>
