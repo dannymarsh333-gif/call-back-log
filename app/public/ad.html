@@ -43,11 +43,13 @@
   .content h1 { font-size:30px; margin:4px 0 6px; letter-spacing:-0.02em; } .content h2 { font-size:20px; margin:20px 0 8px; }
   .muted { color:#5B6180; font-size:18px; }
   .acard { background:#fff; border:2px solid #F1DCCD; border-radius:14px; padding:14px 16px; margin-bottom:12px; font-size:19px; overflow:hidden; box-sizing:border-box; }
-  .acard.yellow { border-left:7px solid #FFC93C; } .acard.red { border-left:7px solid #E63946; } .acard.new { border-left:7px solid var(--blue); }
+  .acard.yellow { border-left:7px solid #FFC93C; } .acard.red { border-left:7px solid #C62F3B; } .acard.new { border-left:7px solid var(--blue); }
   .rowtop { display:flex; justify-content:space-between; align-items:center; gap:8px; } .nm { font-weight:800; font-size:20px; }
   .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:14px; font-weight:800; white-space:nowrap; }
-  .b-due { background:#D5F5EC; color:#0E6B55; } .b-yellow { background:#FFE9A8; color:#6B4E00; } .b-red { background:#E63946; color:#fff; } .b-new { background:#FF6B4A; color:var(--ink); } .b-later { background:#FFE3D9; color:var(--coral-ink); }
-  .prev { margin-top:6px; font-size:16px; font-weight:800; color:var(--coral-ink); }
+  .b-due { background:#D5F5EC; color:#0E6B55; } .b-yellow { background:#FFE9A8; color:#6B4E00; } .b-red { background:#C62F3B; color:#fff; } .b-new { background:#FF6B4A; color:var(--ink); } .b-later { background:#FFE3D9; color:var(--coral-ink); }
+  .prev { margin-top:6px; font-size:16px; font-weight:800; color:var(--ink); }
+  .acard.flip { overflow:visible; }
+  .acard.flip .badge { transform-origin:right center; }
   .abtn { display:block; text-align:center; background:#FF6B4A; color:var(--ink); font-weight:800; font-size:19px; padding:14px; border-radius:12px; margin:10px 0 14px; }
   .abtn.ghost { background:#fff; color:var(--ink); border:2px solid #F1DCCD; }
   .btns { display:flex; gap:10px; } .btns .abtn { flex:1; margin:8px 0; }
@@ -269,7 +271,7 @@
     const hook = makeBubble(o.cam, [
       { text: 'Ok,' }, { text: 'alright,' }, { text: 'sounds' }, { text: 'good,' },
       { text: 'FANTASTIC,', style: 'color:' + BLUE + ';font-size:70px;font-weight:800;letter-spacing:-0.04em' },
-      { text: 'great,' }, { text: 'have' }, { text: 'a' }, { text: 'great' }, { text: 'day!' }], 'left:690px;top:150px;width:740px');
+      { text: 'great,' }, { text: 'have' }, { text: 'a' }, { text: 'great' }, { text: 'day,' }, { text: 'Jane!' }], 'left:690px;top:150px;width:740px');
     // the thought sits to his left so the wall clock stays in view while the hour flies by
     const think1 = makeBubble(o.cam, 'What did I just talk about for the past hour?'.split(' ').map((w) => ({ text: w })), 'left:190px;top:110px;width:520px;font-family:Instrument Serif,Georgia,serif;font-style:italic;font-weight:400;font-size:58px', 'think');
     const puffs = [el('div', { class: 'puff', style: 'left:585px;top:405px;width:40px;height:40px' }, o.cam), el('div', { class: 'puff', style: 'left:520px;top:345px;width:58px;height:58px' }, o.cam)];
@@ -282,7 +284,7 @@
     if (t < 6) { z = lerp(1.18, 1.24, eio(P(t, 0, 6))); cx = 860; cy = 520; }
     else if (t < 9.4) { const p = eio(P(t, 6, 9.4)); z = lerp(1.24, 1.28, p); cx = lerp(860, 880, p); cy = lerp(520, 470, p); }
     else if (t < 13.8) { const p = eio(P(t, 9.4, 10.1)); z = lerp(1.28, 1.0, p); cx = lerp(880, 1060, p); cy = lerp(470, 540, p); }
-    else { z = 1.32 + 0.04 * P(t, 13.8, 19); cx = 820; cy = 470; }
+    else { z = 1.2 + 0.03 * P(t, 13.8, 19); cx = 860; cy = 480; } // wide enough to keep the wall clock fully in frame
     camTo(o, cx, cy, z);
 
     // the clock: an hour flies by while he stares
@@ -330,7 +332,7 @@
     });
 
     // bubbles
-    playBubble(c.hook, t, 0.15, 5.9, [0.25, 0.65, 1.0, 1.3, 1.75, 2.75, 3.25, 3.5, 3.7, 3.95]);
+    playBubble(c.hook, t, 0.15, 5.9, [0.25, 0.65, 1.0, 1.3, 1.75, 2.75, 3.25, 3.5, 3.7, 3.95, 4.25]);
     playBubble(c.think1, t, 6.2, 9.4, c.think1.ws.map((_, i) => 6.35 + i * 0.12));
     playBubble(c.coSay, t, 10.3, 13.7, c.coSay.ws.map((_, i) => 10.45 + i * 0.15 + (i >= 7 ? 0.25 : 0)));
     c.puffs.forEach((pf, i) => {
@@ -390,11 +392,11 @@
     // paint "yellow" and "red" as the badges they describe
     caps[1][0].chars.forEach((w) => {
       if (w.textContent === 'yellow.') w.style.cssText = 'background:#FFC93C;color:#1B2140;border-radius:14px;padding:0 14px 6px';
-      if (w.textContent === 'red.') w.style.cssText = 'background:#E63946;color:#fff;border-radius:14px;padding:0 14px 6px';
+      if (w.textContent === 'red.') w.style.cssText = 'background:#C62F3B;color:#fff;border-radius:14px;padding:0 14px 6px';
     });
     const chipRow = el('div', { style: 'position:absolute;left:1060px;top:690px;width:780px;display:flex;flex-wrap:wrap;gap:16px' }, root);
     const chips = ['Topics', 'Companies', 'Next steps', 'Callback date'].map((w) => el('div', { style: 'font-size:34px;font-weight:700;padding:12px 22px;border-radius:999px;border:4px solid ' + INK + ';white-space:nowrap' }, chipRow, w));
-    return { ph, panes, jc, calls, caps, chips, flipA: panes.today.querySelector('.flipA'), flipB: panes.today.querySelector('.flipB'),
+    return { ph, panes, jc, calls, caps, chips, janeCard: panes.today.querySelector('.acard'), flipA: panes.today.querySelector('.flipA'), flipB: panes.today.querySelector('.flipB'),
       typed: panes.topics.querySelector('.typed'), typed2: panes.date.querySelector('.typed2'), carets: Array.from(ph.scr.querySelectorAll('.caret')),
       confirm: panes.date.querySelector('.confirm'), mic: panes.topics.querySelector('.mic'), stops: null };
   }, (c, t) => {
@@ -419,8 +421,10 @@
       card.className = 'acard ' + (on ? after[0] : before[0]) + ' flip';
       s.className = 'badge b-' + (on ? after[1] : before[1]);
       s.textContent = on ? after[2] : before[2];
-      s.style.transform = 'scale(' + (1 + 0.35 * Math.sin(Math.PI * P(t, at, at + 0.35))).toFixed(3) + ')';
+      s.style.transform = 'scale(' + (1 + 0.2 * Math.sin(Math.PI * P(t, at, at + 0.35))).toFixed(3) + ')';
     };
+    // Jane steps back while the other two show what "a day later" looks like, so her "Due today" doesn't contradict it
+    c.janeCard.style.opacity = (1 - 0.65 * eio(P(t, 2.2, 2.5)) * (1 - eio(P(t, 3.8, 4.1)))).toFixed(3);
     flip(c.flipA, 2.5, ['', 'due', 'Due today'], ['yellow', 'yellow', '1 day overdue']);
     flip(c.flipB, 3.2, ['yellow', 'yellow', '1 day overdue'], ['red', 'red', '2 days overdue']);
 
