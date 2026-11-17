@@ -18,3 +18,11 @@
 - [x] Update ad-script.md to the new 46.5-second version (Nov 17)
 - [x] Push the Sunrise colors for the app to GitHub
 - [x] App is live: https://dannymarsh333-gif.github.io/call-back-log/ (updates automatically on every push)
+
+## Ads (Nov 17, from the class motion-graphics guide)
+- [x] Square rebuild: media/ad/call-back-log-ad.mp4 (1080x1080, 60fps, music "Keep Smiling" from Mixkit). Source: media/ad/call-back-log-ad-square.html
+- [x] Contrarian + professor-tutor reviews applied (tutor 87/100)
+- [ ] Watch the MP4; note anything that feels off (one change at a time)
+- [ ] Put the new ad on the live site? (needs a push)
+- [ ] 12-second loop -> media/ad-short/
+- [ ] Optional: showreel prompt, logo loop

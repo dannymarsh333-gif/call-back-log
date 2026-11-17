@@ -165,3 +165,5 @@ body[data-view="home"] .season { display: block; width: min(300px, 78vw); margin
 .sz-snow { animation: szsnow 7s linear infinite; } .sz-snow.s1 { animation-duration: 9s; animation-delay: -3s; } .sz-snow.s2 { animation-duration: 11s; animation-delay: -6s; }
 @keyframes szsnow { 0% { translate: 0 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { translate: -20px 560px; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .owl-lids, .sz-fall, .sz-snow { animation: none; } .sz-fall, .sz-snow { display: none; } }
+/* phones and tablets: keep the swipe row short; the full list shows on wide screens */
+@media (max-width: 1099px) { .ask li:nth-child(n+3):not(.tip) { display: none; } }
