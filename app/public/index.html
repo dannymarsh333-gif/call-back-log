@@ -167,7 +167,7 @@
   <div class="strip">
     <div class="page">
       <div class="meta label"><span id="dateline">Fall Edition</span><span class="hide-sm">Autumn Edition</span><span class="hide-sm">Leaves: mostly down</span></div>
-      <a class="cta" href="app.html">Start calling<span class="long">&nbsp;today</span> &rarr;</a>
+      <a class="cta" href="app.html"><span>Start calling<span class="long"> today</span></span> &rarr;</a>
     </div>
   </div>
 
@@ -277,7 +277,7 @@
         <h3>The 46-second video every new rep needs to see</h3>
       </div>
       <div class="screen">
-        <iframe src="ad.html" title="Call Back Log ad: a 46-second animated story" loading="lazy" allow="fullscreen"></iframe>
+        <iframe id="adFrame" src="ad.html" title="Call Back Log ad: a 46-second animated story" loading="lazy" allow="fullscreen"></iframe>
       </div>
       <div class="credit"><span>A rep, a stack of notes, and a callback a week later.</span><span>Jane Doe and every name in the video are made up.</span></div>
     </section>
@@ -352,6 +352,17 @@
     try {
       document.getElementById('dateline').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     } catch (e) { /* keep "Fall Edition" */ }
+    // start the ad only once at least half of it is on screen
+    (function () {
+      const f = document.getElementById('adFrame');
+      if (!f || !('IntersectionObserver' in window)) return;
+      let seen = false, ready = false;
+      const go = () => { if (seen && ready) { try { f.contentWindow.postMessage('cbl-play', '*'); } catch (e) {} } };
+      f.addEventListener('load', () => { ready = true; go(); });
+      new IntersectionObserver((list, obs) => {
+        if (list.some((x) => x.isIntersecting)) { seen = true; go(); obs.disconnect(); }
+      }, { threshold: 0.5 }).observe(f);
+    })();
     // the leaf pile under the tree: the same pile every visit
     (function () {
       let seed = 7;

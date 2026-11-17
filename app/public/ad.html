@@ -14,7 +14,7 @@
   #viewport { position:relative; width:min(100%, calc((100vh - 90px) * 16 / 9)); aspect-ratio:16/9; overflow:hidden; border-radius:10px; }
   #stage { position:absolute; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; background:var(--paper); overflow:hidden; color:var(--ink);
            font-family:"Inter Tight", "Segoe UI", system-ui, sans-serif; }
-  .shot { position:absolute; inset:0; visibility:hidden; overflow:hidden; }
+  .shot { position:absolute; inset:0; display:none; overflow:hidden; }
   .cam { position:absolute; inset:0; transform-origin:0 0; }
   .serif { font-family:"Instrument Serif", Georgia, "Times New Roman", serif; font-style:italic; font-weight:400; letter-spacing:-0.01em; }
   .wrow { position:absolute; display:flex; align-items:baseline; white-space:nowrap; line-height:1; }
@@ -521,7 +521,7 @@
     shots.forEach((s, i) => {
       const last = i === shots.length - 1;
       const on = t >= s.a && (t < s.b || (last && t <= DUR));
-      s.root.style.visibility = on ? 'visible' : 'hidden';
+      s.root.style.display = on ? 'block' : 'none'; // display, not visibility: a child set to visible would still show through a hidden parent
       if (on) s.render(s.ctx, t - s.a);
     });
   }
@@ -535,6 +535,15 @@
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) playing = false;
   const jump = location.hash.match(/t=([\d.]+)/); // open with #t=30 to land paused on that moment
   if (jump) { t = clamp(+jump[1], 0, DUR); playing = false; }
+  // #t=40&sweep plays every moment from 0 up to t first, the way real playback would (for testing)
+  if (jump && /sweep/.test(location.hash)) { for (let x = 0; x < t; x += 0.05) render(x); }
+  // On the home page the ad waits, paused, until the page says it's on screen.
+  let embedded = false;
+  try { embedded = window.self !== window.top; } catch (e) { embedded = true; }
+  if (embedded && !jump) playing = false;
+  window.addEventListener('message', (e) => {
+    if (e.data === 'cbl-play' && !playing && t === 0) { playing = true; last = null; }
+  });
   const playBtn = $('play'), scrub = $('scrub'), time = $('time');
   function show() {
     render(t);
