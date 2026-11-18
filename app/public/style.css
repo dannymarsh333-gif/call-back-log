@@ -88,8 +88,12 @@ textarea { min-height: 140px; resize: vertical; }
 .step { color: var(--muted); font-size: 0.9rem; }
 .issue { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .issue:last-child { border-bottom: 0; }
-.issue.done span { text-decoration: line-through; color: var(--muted); }
-.issue .btn { min-height: 40px; padding: 6px 12px; }
+.issue.done > span:first-child { text-decoration: line-through; color: var(--muted); }
+.issue { flex-wrap: wrap; }
+.issue .mini { display: flex; gap: 6px; flex-wrap: wrap; }
+.issue .btn { min-height: 44px; padding: 6px 12px; }
+.call .actions { margin: 4px 0 8px; }
+.call .actions .btn { flex: 0 0 auto; min-height: 44px; }
 .call h3 { margin: 0 0 4px; font-size: 1rem; }
 .call dl { margin: 6px 0 0; }
 .call dt { font-weight: 700; font-size: 0.85rem; color: var(--muted); margin-top: 6px; }

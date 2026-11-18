@@ -44,9 +44,18 @@
     }
   }
   async function trySave() {
-    try { await save(); } catch (e) {
+    try { await save(); return true; } catch (e) {
       alert(mode === "server" ? "Could not save. Is the server still running?" : "Could not save in this browser. Private or incognito windows may block saving.");
+      return false;
     }
+  }
+  // Make a change, save it, and undo it if the save fails, so the screen never shows something that was not saved.
+  async function commit(change) {
+    const before = JSON.parse(JSON.stringify(state));
+    change();
+    if (await trySave()) return true;
+    state = before;
+    return false;
   }
   function localNote() {
     return mode === "local"
@@ -156,7 +165,9 @@
     const openIssues = (c.issues || []).filter((i) => !i.resolved);
     const doneIssues = (c.issues || []).filter((i) => i.resolved);
     const issueRow = (i) => `<div class="issue ${i.resolved ? "done" : ""}"><span>${esc(i.text)}</span>
-      <button class="btn" data-issue="${i.id}">${i.resolved ? "Reopen" : "Resolve"}</button></div>`;
+      <span class="mini"><button class="btn" data-issue="${i.id}">${i.resolved ? "Reopen" : "Resolve"}</button>
+      <button class="btn" data-issue-edit="${i.id}" aria-label="Edit issue: ${esc(i.text)}">Edit</button>
+      <button class="btn danger" data-issue-del="${i.id}" aria-label="Delete issue: ${esc(i.text)}">Delete</button></span></div>`;
     const calls = [...(c.calls || [])].sort((a, b) => b.date.localeCompare(a.date));
     const dl = (k, v) => (v ? `<dt>${k}</dt><dd>${esc(v)}</dd>` : "");
 
@@ -171,6 +182,7 @@
       <div class="actions">
         ${callBtn}
         <a class="btn" href="#/debrief/${c.id}">Finish call</a>
+        <a class="btn" href="#/edit/${c.id}">Edit contact</a>
       </div>
 
       <h2>Open issues</h2>
@@ -181,7 +193,9 @@
 
       <h2>Call history (newest first)</h2>
       ${calls.length ? calls.map((k) => `
-        <div class="card call"><h3>${esc(nice(k.date))}</h3><dl>
+        <div class="card call"><h3>${esc(nice(k.date))}</h3>
+          <div class="actions"><a class="btn" href="#/editcall/${c.id}/${k.id}" aria-label="Edit call on ${esc(nice(k.date))}">Edit</a>
+          <button class="btn danger" data-call-del="${k.id}" aria-label="Delete call on ${esc(nice(k.date))}">Delete</button></div><dl>
           ${dl("Topics covered", k.topics)}${dl("Companies discussed", k.companies)}
           ${dl("Next points of progress", k.next)}${dl("Objections", k.objections)}${dl("Life issues", k.lifeIssues)}
         </dl></div>`).join("") : `<div class="empty">No calls logged yet.</div>`}
@@ -190,7 +204,12 @@
       ${c.dnc
         ? `<button class="btn danger block" id="undoDnc">Remove do-not-call flag</button>`
         : `<button class="btn danger block" id="setDnc">Mark do not call</button>`}
-      ${(c.dncLog || []).length ? `<div class="card muted">${c.dncLog.map((l) => `${esc(l.date)}: ${esc(l.action)}. ${esc(l.reason)}`).join("<br>")}</div>` : ""}`;
+      ${(c.dncLog || []).length ? `<div class="card muted">${c.dncLog.map((l) => `${esc(l.date)}: ${esc(l.action)}. ${esc(l.reason)}`).join("<br>")}</div>` : ""}
+
+      <h2>Delete contact</h2>
+      ${c.dnc
+        ? `<p class="muted">Do-not-call contacts can't be deleted, so the record stays. Remove the flag first if you really need to delete.</p>`
+        : `<button class="btn danger block" id="delContact">Delete this contact</button>`}`;
 
     app.querySelectorAll("[data-issue]").forEach((b) => b.addEventListener("click", async () => {
       const i = c.issues.find((x) => x.id === b.dataset.issue);
@@ -198,6 +217,33 @@
       await trySave();
       viewContact(id);
     }));
+    app.querySelectorAll("[data-issue-edit]").forEach((b) => b.addEventListener("click", async () => {
+      const i = c.issues.find((x) => x.id === b.dataset.issueEdit);
+      const text = prompt("Edit this issue:", i.text);
+      if (text === null) return;
+      if (!text.trim()) { alert("An issue can't be blank. Use Delete to remove it."); return; }
+      await commit(() => { i.text = text.trim(); });
+      route();
+    }));
+    app.querySelectorAll("[data-issue-del]").forEach((b) => b.addEventListener("click", async () => {
+      const i = c.issues.find((x) => x.id === b.dataset.issueDel);
+      if (!confirm('Delete this issue? "' + i.text + '"')) return;
+      await commit(() => { c.issues = c.issues.filter((x) => x.id !== i.id); });
+      route();
+    }));
+    app.querySelectorAll("[data-call-del]").forEach((b) => b.addEventListener("click", async () => {
+      const k = c.calls.find((x) => x.id === b.dataset.callDel);
+      if (!confirm("Delete the call on " + nice(k.date) + "? This can't be undone.")) return;
+      await commit(() => { c.calls = c.calls.filter((x) => x.id !== k.id); });
+      route();
+    }));
+    const delContact = document.getElementById("delContact");
+    if (delContact) delContact.addEventListener("click", async () => {
+      const n = (c.calls || []).length;
+      if (!confirm("Delete " + c.name + " and their " + n + " logged call" + (n === 1 ? "" : "s") + "? This can't be undone.")) return;
+      if (await commit(() => { state.contacts = state.contacts.filter((x) => x.id !== c.id); })) location.hash = "#/";
+      else route();
+    });
     const setBtn = document.getElementById("setDnc");
     if (setBtn) setBtn.addEventListener("click", async () => {
       if (!confirm("Mark " + c.name + " as do not call?")) return;
@@ -216,6 +262,70 @@
       c.dncLog.push({ date: today(), action: "flag removed", reason });
       await trySave();
       viewContact(id);
+    });
+  }
+
+  function viewEditContact(id) {
+    const c = find(id);
+    if (!c) { app.innerHTML = `<div class="empty">Contact not found. <a href="#/">Back</a></div>`; return; }
+    app.innerHTML = `
+      <h1>Edit contact</h1>
+      <form id="editForm">
+        <label for="name">Name (required)</label>
+        <input id="name" required autocomplete="off" value="${esc(c.name)}"${c.dnc ? " readonly" : ""}>
+        <label for="phone">Phone (required)</label>
+        <input id="phone" type="tel" required autocomplete="off" value="${esc(c.phone)}"${c.dnc ? " readonly" : ""}>
+        ${c.dnc ? `<p class="muted">Name and phone are locked while this contact is marked do not call, so the flagged number can't be changed.</p>` : ""}
+        <label for="date">Next callback date (blank = none)</label>
+        <input id="date" type="date" value="${esc(c.callbackDate || "")}">
+        <label for="time">Callback time (optional)</label>
+        <input id="time" type="time" value="${esc(c.callbackTime || "")}">
+        <div class="actions">
+          <a class="btn" href="#/c/${c.id}">Cancel</a>
+          <button class="btn primary" type="submit">Save</button>
+        </div>
+      </form>`;
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      if (!name || !phone) return;
+      const date = document.getElementById("date").value;
+      const time = date ? document.getElementById("time").value : "";
+      const ok = await commit(() => {
+        if (!c.dnc) { c.name = name; c.phone = phone; } // flagged records keep their name and number
+        c.callbackDate = date; c.callbackTime = time;
+      });
+      if (ok) location.hash = "#/c/" + c.id;
+    });
+  }
+
+  function viewEditCall(id, callId) {
+    const c = find(id);
+    const k = c && (c.calls || []).find((x) => x.id === callId);
+    if (!k) { app.innerHTML = `<div class="empty">Call not found. <a href="#/">Back</a></div>`; return; }
+    const area = (key, label) => `<label for="${key}">${label}</label><textarea id="${key}">${esc(k[key])}</textarea>`;
+    app.innerHTML = `
+      <a href="#/c/${c.id}" class="muted">&larr; Back</a>
+      <h1>Edit call</h1>
+      <p class="muted">${esc(c.name)}</p>
+      <form id="callForm">
+        <label for="cdate">Date of the call</label>
+        <input id="cdate" type="date" required max="${today()}" value="${esc(k.date)}">
+        ${area("topics", "Topics covered")}${area("companies", "Companies discussed")}${area("next", "Next points of progress")}${area("objections", "Objections")}${area("lifeIssues", "Life issues")}
+        <div class="actions">
+          <a class="btn" href="#/c/${c.id}">Cancel</a>
+          <button class="btn primary" type="submit">Save</button>
+        </div>
+      </form>`;
+    document.getElementById("callForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const d = document.getElementById("cdate").value;
+      if (!d) return;
+      const vals = {};
+      ["topics", "companies", "next", "objections", "lifeIssues"].forEach((key) => { vals[key] = document.getElementById(key).value.trim(); });
+      const ok = await commit(() => { k.date = d; Object.assign(k, vals); });
+      if (ok) location.hash = "#/c/" + c.id;
     });
   }
 
@@ -416,6 +526,8 @@
     let m;
     if (h === "#/all") return viewAll();
     if (h === "#/add") return viewAdd();
+    if ((m = h.match(/^#\/editcall\/([^/]+)\/([^/]+)$/))) return viewEditCall(m[1], m[2]);
+    if ((m = h.match(/^#\/edit\/(.+)$/))) return viewEditContact(m[1]);
     if ((m = h.match(/^#\/c\/(.+)$/))) return viewContact(m[1]);
     if ((m = h.match(/^#\/debrief\/(.+)$/))) return viewDebrief(m[1]);
     return viewHome();
